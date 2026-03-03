@@ -8,11 +8,9 @@ import { useApp } from '@/providers/AppProvider';
 import { GameEvent } from '@/types';
 import { formatEventDate, getDaysUntil, isToday, isTomorrow } from '@/utils/date';
 import { gameDayTips, timingLabels, timingOrder } from '@/mocks/gameday';
-import { useRouter } from 'expo-router';
 
 export default function GameDayScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const { upcomingEvents, addEvent, removeEvent, profile } = useApp();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<GameEvent | null>(null);
@@ -131,7 +129,7 @@ export default function GameDayScreen() {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.tipsScrollContent}>
             <View style={styles.eventDetailCard}>
               <View style={styles.eventDetailTop}>
-                <View style={[styles.countdownPill, { backgroundColor: getCountdownColor(selectedEvent.date) + '18' }]}>
+                <View style={[styles.countdownPill, { backgroundColor: getCountdownColor(selectedEvent.date) + '20' }]}>
                   <Text style={[styles.countdownPillText, { color: getCountdownColor(selectedEvent.date) }]}>
                     {getCountdownLabel(selectedEvent.date)}
                   </Text>
@@ -195,11 +193,8 @@ export default function GameDayScreen() {
               <Text style={styles.title}>Game Day</Text>
               <Text style={styles.subtitle}>Prepare for peak performance</Text>
             </View>
-            <Pressable
-              onPress={() => setShowAddModal(true)}
-              style={styles.addButton}
-            >
-              <Plus size={20} color="#fff" />
+            <Pressable onPress={() => setShowAddModal(true)} style={styles.addButton}>
+              <Plus size={20} color={Colors.background} />
             </Pressable>
           </View>
 
@@ -212,18 +207,14 @@ export default function GameDayScreen() {
                   Add a game or event to get personalized performance tips and a preparation timeline.
                 </Text>
                 <Pressable onPress={() => setShowAddModal(true)} style={styles.emptyButton}>
-                  <Plus size={16} color="#fff" />
+                  <Plus size={16} color={Colors.background} />
                   <Text style={styles.emptyButtonText}>Schedule Event</Text>
                 </Pressable>
               </View>
             ) : (
               <>
                 {upcomingEvents.map(event => (
-                  <Pressable
-                    key={event.id}
-                    onPress={() => handleEventPress(event)}
-                    style={styles.eventCard}
-                  >
+                  <Pressable key={event.id} onPress={() => handleEventPress(event)} style={styles.eventCard}>
                     <View style={styles.eventCardLeft}>
                       <View style={[styles.countdownBadge, { backgroundColor: getCountdownColor(event.date) }]}>
                         <Text style={styles.countdownText}>{getCountdownLabel(event.date)}</Text>
@@ -397,7 +388,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800' as const,
     color: Colors.text,
     letterSpacing: -0.5,
@@ -453,7 +444,7 @@ const styles = StyleSheet.create({
   emptyButtonText: {
     fontSize: 15,
     fontWeight: '700' as const,
-    color: '#fff',
+    color: Colors.background,
   },
   eventCard: {
     backgroundColor: Colors.surface,
@@ -461,7 +452,7 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -501,26 +492,30 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   quickTipCard: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.surface,
     borderRadius: 18,
     padding: 20,
     marginTop: 8,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.accent,
   },
   quickTipLabel: {
     fontSize: 13,
     fontWeight: '700' as const,
-    color: Colors.accentLight,
+    color: Colors.accent,
     marginBottom: 10,
   },
   quickTipText: {
     fontSize: 14,
-    color: '#E0E0E0',
+    color: Colors.textSecondary,
     lineHeight: 22,
     marginBottom: 10,
   },
   quickTipSource: {
     fontSize: 11,
-    color: '#8FAF9E',
+    color: Colors.textMuted,
     fontStyle: 'italic' as const,
   },
   tipsHeader: {
@@ -554,7 +549,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
   eventDetailTop: {
     marginBottom: 10,
@@ -635,7 +630,7 @@ const styles = StyleSheet.create({
   timingLabel: {
     fontSize: 15,
     fontWeight: '700' as const,
-    color: Colors.primaryLight,
+    color: Colors.primary,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.8,
   },
@@ -645,7 +640,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
   tipCardHeader: {
     flexDirection: 'row',
@@ -671,7 +666,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   tipScienceBox: {
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.surfaceLight,
     borderRadius: 10,
     padding: 12,
     marginTop: 12,
@@ -679,7 +674,7 @@ const styles = StyleSheet.create({
   tipScienceLabel: {
     fontSize: 11,
     fontWeight: '700' as const,
-    color: Colors.primaryLight,
+    color: Colors.primary,
     marginBottom: 4,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
@@ -691,11 +686,11 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.backgroundElevated,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 20,
@@ -734,7 +729,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.text,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
   inputMultiline: {
     minHeight: 80,
@@ -754,6 +749,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: '700' as const,
-    color: '#fff',
+    color: Colors.background,
   },
 });

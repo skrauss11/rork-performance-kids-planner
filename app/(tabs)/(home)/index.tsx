@@ -2,13 +2,15 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Animated, Pressable, Modal, TextInput, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Flame, TrendingUp, BookOpen, Zap, Calendar } from 'lucide-react-native';
+import { Flame, TrendingUp, BookOpen, Zap, Calendar, ChevronDown } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useApp } from '@/providers/AppProvider';
 import { getGreeting, getFormattedDate, formatEventDate, getDaysUntil } from '@/utils/date';
 import CategoryCard from '@/components/CategoryCard';
 import ChildDashboard from '@/components/ChildDashboard';
 import ChildCheckIn from '@/components/ChildCheckIn';
+import TrendGraph from '@/components/TrendGraph';
+import ProgressRing from '@/components/ProgressRing';
 import { HabitCategory } from '@/types';
 import { dayLabels } from '@/mocks/habits';
 
@@ -20,7 +22,8 @@ export default function HomeScreen() {
   const {
     profile, todayCompletedCount, totalCount, todayPercentage,
     weeklyPercentage, categoryProgress, streak, hasProfile,
-    upcomingEvents, todayIndex, habits,
+    upcomingEvents, todayIndex, habits, children, activeChild,
+    switchActiveChild, dailyCompletionData, moodTrendData, energyTrendData,
     appMode, switchMode, parentPin, verifyPin,
   } = useApp();
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -28,6 +31,7 @@ export default function HomeScreen() {
   const [showCheckIn, setShowCheckIn] = useState<boolean>(false);
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
   const [pinAttempt, setPinAttempt] = useState<string>('');
+  const [showChildPicker, setShowChildPicker] = useState<boolean>(false);
 
   const handleSwitchToParent = useCallback(() => {
     if (parentPin) {
@@ -64,11 +68,6 @@ export default function HomeScreen() {
     ]).start();
   }, [weeklyPercentage]);
 
-  const progressWidth = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
-  });
-
   const displayName = hasProfile ? profile.name.split(' ')[0] : 'Champion';
   const nextEvent = upcomingEvents.length > 0 ? upcomingEvents[0] : null;
 
@@ -101,7 +100,7 @@ export default function HomeScreen() {
                 maxLength={4}
                 secureTextEntry
                 placeholder="••••"
-                placeholderTextColor="#B0ADC8"
+                placeholderTextColor={Colors.textMuted}
                 autoFocus
               />
               <Pressable style={pinStyles.submitBtn} onPress={handlePinSubmit}>
@@ -124,12 +123,20 @@ export default function HomeScreen() {
           <View style={styles.header}>
             <View>
               <Text style={styles.greeting}>{getGreeting()}</Text>
-              <Text style={styles.nameText}>{displayName}'s Week</Text>
+              <Text style={styles.nameText}>{displayName}&apos;s Week</Text>
               <Text style={styles.dateText}>{getFormattedDate()}</Text>
             </View>
-            <View style={styles.streakBadge}>
-              <Flame size={18} color={Colors.accent} />
-              <Text style={styles.streakNumber}>{streak.current}</Text>
+            <View style={styles.headerRight}>
+              {children.length > 1 && (
+                <Pressable style={styles.childPicker} onPress={() => setShowChildPicker(true)}>
+                  <Text style={styles.childPickerEmoji}>{activeChild?.avatarEmoji || '⚡'}</Text>
+                  <ChevronDown size={14} color={Colors.textSecondary} />
+                </Pressable>
+              )}
+              <View style={styles.streakBadge}>
+                <Flame size={16} color={Colors.accent} />
+                <Text style={styles.streakNumber}>{streak.current}</Text>
+              </View>
             </View>
           </View>
 
@@ -138,6 +145,7 @@ export default function HomeScreen() {
               style={styles.nextEventCard}
               onPress={() => router.push('/gameday' as any)}
             >
+              <View style={styles.nextEventGlow} />
               <View style={styles.nextEventHeader}>
                 <Zap size={16} color={Colors.accent} />
                 <Text style={styles.nextEventLabel}>Next Event</Text>
@@ -153,7 +161,7 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.nextEventTitle}>{nextEvent.title}</Text>
               <View style={styles.nextEventMeta}>
-                <Calendar size={12} color="rgba(255,255,255,0.6)" />
+                <Calendar size={12} color={Colors.textSecondary} />
                 <Text style={styles.nextEventDate}>
                   {formatEventDate(nextEvent.date)}
                   {nextEvent.time ? ` at ${nextEvent.time}` : ''}
@@ -162,20 +170,104 @@ export default function HomeScreen() {
             </Pressable>
           )}
 
-          <View style={styles.progressCard}>
-            <View style={styles.progressHeader}>
-              <View>
-                <Text style={styles.progressTitle}>This Week</Text>
-                <Text style={styles.progressSubtitle}>{todayCompletedCount}/{totalCount} completed today</Text>
+          <View style={styles.ringSection}>
+            <ProgressRing percentage={todayPercentage} size={140} strokeWidth={10} color={Colors.primary} />
+            <View style={styles.ringStats}>
+              <View style={styles.ringStat}>
+                <Text style={styles.ringStatValue}>{todayCompletedCount}</Text>
+                <Text style={styles.ringStatLabel}>Done Today</Text>
               </View>
-              <View style={styles.percentBadge}>
-                <Text style={styles.percentText}>{weeklyPercentage}%</Text>
+              <View style={styles.ringDivider} />
+              <View style={styles.ringStat}>
+                <Text style={styles.ringStatValue}>{totalCount}</Text>
+                <Text style={styles.ringStatLabel}>Total Habits</Text>
+              </View>
+              <View style={styles.ringDivider} />
+              <View style={styles.ringStat}>
+                <Text style={[styles.ringStatValue, { color: Colors.accent }]}>{weeklyPercentage}%</Text>
+                <Text style={styles.ringStatLabel}>This Week</Text>
               </View>
             </View>
-            <View style={styles.progressTrack}>
-              <Animated.View style={[styles.progressBar, { width: progressWidth }]} />
-            </View>
+          </View>
 
+          <View style={styles.trendCard}>
+            <TrendGraph
+              data={dailyCompletionData}
+              title="Weekly Progress"
+              subtitle="Daily completion rate"
+              height={140}
+              color={Colors.primary}
+              showBars
+              maxValue={100}
+            />
+          </View>
+
+          {moodTrendData.length > 1 && (
+            <View style={styles.trendCard}>
+              <TrendGraph
+                data={moodTrendData}
+                title="Mood Trend"
+                subtitle="Recent check-in mood scores"
+                height={120}
+                color={Colors.info}
+                maxValue={5}
+                unit=""
+              />
+            </View>
+          )}
+
+          {energyTrendData.length > 1 && (
+            <View style={styles.trendCard}>
+              <TrendGraph
+                data={energyTrendData}
+                title="Energy Trend"
+                subtitle="Recent energy levels"
+                height={120}
+                color={Colors.accent}
+                maxValue={5}
+                unit=""
+              />
+            </View>
+          )}
+
+          <View style={styles.quickActions}>
+            <Pressable style={styles.actionCard} onPress={() => router.push('/habits' as any)}>
+              <View style={[styles.actionIconWrap, { backgroundColor: Colors.primaryMuted }]}>
+                <TrendingUp size={20} color={Colors.primary} />
+              </View>
+              <Text style={styles.actionLabel}>Track Habits</Text>
+            </Pressable>
+            <Pressable style={styles.actionCard} onPress={() => router.push('/gameday' as any)}>
+              <View style={[styles.actionIconWrap, { backgroundColor: Colors.accentMuted }]}>
+                <Zap size={20} color={Colors.accent} />
+              </View>
+              <Text style={styles.actionLabel}>Game Day</Text>
+            </Pressable>
+            <Pressable style={styles.actionCard} onPress={() => router.push('/learn' as any)}>
+              <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(91, 141, 239, 0.15)' }]}>
+                <BookOpen size={20} color={Colors.info} />
+              </View>
+              <Text style={styles.actionLabel}>Learn</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Today&apos;s Categories</Text>
+            <View style={styles.categoryGrid}>
+              {categories.map(cat => (
+                <CategoryCard
+                  key={cat}
+                  category={cat}
+                  completed={categoryProgress[cat].completed}
+                  total={categoryProgress[cat].total}
+                  onPress={() => router.push('/habits' as any)}
+                />
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.weekCard}>
+            <Text style={styles.weekCardTitle}>Week at a Glance</Text>
             <View style={styles.weekDaysRow}>
               {dayLabels.map((label, i) => {
                 const dayCompleted = habits.filter(h => h.completedDays[i]).length;
@@ -198,42 +290,11 @@ export default function HomeScreen() {
                 );
               })}
             </View>
-
             {todayPercentage === 100 && (
               <View style={styles.completedBanner}>
                 <Text style={styles.completedText}>🎉 All habits completed today!</Text>
               </View>
             )}
-          </View>
-
-          <View style={styles.quickActions}>
-            <Pressable style={styles.actionCard} onPress={() => router.push('/habits' as any)}>
-              <TrendingUp size={20} color={Colors.primary} />
-              <Text style={styles.actionLabel}>Track Habits</Text>
-            </Pressable>
-            <Pressable style={styles.actionCard} onPress={() => router.push('/gameday' as any)}>
-              <Zap size={20} color={Colors.accent} />
-              <Text style={styles.actionLabel}>Game Day</Text>
-            </Pressable>
-            <Pressable style={styles.actionCard} onPress={() => router.push('/learn' as any)}>
-              <BookOpen size={20} color={Colors.primaryMuted} />
-              <Text style={styles.actionLabel}>Learn</Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Today's Categories</Text>
-            <View style={styles.categoryGrid}>
-              {categories.map(cat => (
-                <CategoryCard
-                  key={cat}
-                  category={cat}
-                  completed={categoryProgress[cat].completed}
-                  total={categoryProgress[cat].total}
-                  onPress={() => router.push('/habits' as any)}
-                />
-              ))}
-            </View>
           </View>
 
           <View style={styles.scienceTip}>
@@ -245,6 +306,35 @@ export default function HomeScreen() {
           </View>
         </Animated.View>
       </ScrollView>
+
+      <Modal visible={showChildPicker} animationType="fade" transparent>
+        <Pressable style={styles.pickerOverlay} onPress={() => setShowChildPicker(false)}>
+          <View style={styles.pickerContent}>
+            <Text style={styles.pickerTitle}>Switch Athlete</Text>
+            {children.map(child => (
+              <Pressable
+                key={child.id}
+                style={[styles.pickerItem, child.id === activeChild?.id && styles.pickerItemActive]}
+                onPress={() => {
+                  switchActiveChild(child.id);
+                  setShowChildPicker(false);
+                }}
+              >
+                <Text style={styles.pickerEmoji}>{child.avatarEmoji}</Text>
+                <View style={styles.pickerInfo}>
+                  <Text style={styles.pickerName}>{child.name}</Text>
+                  <Text style={styles.pickerMeta}>Age {child.age} · {child.sport}</Text>
+                </View>
+                {child.id === activeChild?.id && (
+                  <View style={styles.pickerCheck}>
+                    <Text style={styles.pickerCheckText}>✓</Text>
+                  </View>
+                )}
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -252,46 +342,48 @@ export default function HomeScreen() {
 const pinStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 30,
   },
   content: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.surface,
     borderRadius: 24,
     padding: 32,
     alignItems: 'center',
     width: '100%',
     maxWidth: 320,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
   },
   title: {
     fontSize: 22,
     fontWeight: '800' as const,
-    color: '#2D2B55',
+    color: Colors.text,
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    color: '#8B87B3',
+    color: Colors.textSecondary,
     marginBottom: 24,
   },
   input: {
     width: '100%',
-    backgroundColor: '#F7F5FF',
+    backgroundColor: Colors.surfaceLight,
     borderRadius: 16,
     padding: 16,
     fontSize: 24,
     fontWeight: '700' as const,
-    color: '#2D2B55',
+    color: Colors.text,
     textAlign: 'center',
     letterSpacing: 12,
     borderWidth: 2,
-    borderColor: '#E8E4FF',
+    borderColor: Colors.surfaceBorder,
     marginBottom: 20,
   },
   submitBtn: {
-    backgroundColor: '#6C5CE7',
+    backgroundColor: Colors.primary,
     paddingVertical: 14,
     borderRadius: 16,
     width: '100%',
@@ -301,14 +393,14 @@ const pinStyles = StyleSheet.create({
   submitText: {
     fontSize: 16,
     fontWeight: '700' as const,
-    color: '#fff',
+    color: Colors.background,
   },
   cancelBtn: {
     paddingVertical: 10,
   },
   cancelText: {
     fontSize: 14,
-    color: '#8B87B3',
+    color: Colors.textMuted,
   },
 });
 
@@ -325,15 +417,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   greeting: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.textSecondary,
     marginBottom: 2,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 1,
   },
   nameText: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800' as const,
     color: Colors.text,
     letterSpacing: -0.5,
@@ -343,25 +437,55 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginTop: 4,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  childPicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+  },
+  childPickerEmoji: {
+    fontSize: 18,
+  },
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.accentMuted,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
+    borderRadius: 16,
+    gap: 5,
   },
   streakNumber: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800' as const,
     color: Colors.accent,
   },
   nextEventCard: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.surface,
     borderRadius: 18,
     padding: 18,
-    marginBottom: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.accentMuted,
+    overflow: 'hidden',
+  },
+  nextEventGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: Colors.accent,
   },
   nextEventHeader: {
     flexDirection: 'row',
@@ -370,15 +494,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   nextEventLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700' as const,
-    color: Colors.accentLight,
+    color: Colors.accent,
     textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     flex: 1,
   },
   nextEventCountdown: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: Colors.accentMuted,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
@@ -386,12 +510,12 @@ const styles = StyleSheet.create({
   nextEventCountdownText: {
     fontSize: 11,
     fontWeight: '700' as const,
-    color: '#fff',
+    color: Colors.accent,
   },
   nextEventTitle: {
     fontSize: 18,
     fontWeight: '700' as const,
-    color: '#fff',
+    color: Colors.text,
     marginBottom: 6,
   },
   nextEventMeta: {
@@ -401,102 +525,49 @@ const styles = StyleSheet.create({
   },
   nextEventDate: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
+    color: Colors.textSecondary,
   },
-  progressCard: {
+  ringSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+  ringStats: {
+    flex: 1,
+    marginLeft: 20,
+    gap: 12,
   },
-  progressTitle: {
-    fontSize: 17,
-    fontWeight: '700' as const,
+  ringStat: {
+    alignItems: 'flex-start',
+  },
+  ringStatValue: {
+    fontSize: 24,
+    fontWeight: '800' as const,
     color: Colors.text,
   },
-  progressSubtitle: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  percentBadge: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 14,
-  },
-  percentText: {
-    fontSize: 16,
-    fontWeight: '800' as const,
-    color: '#fff',
-  },
-  progressTrack: {
-    height: 8,
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 16,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: Colors.primary,
-    borderRadius: 4,
-  },
-  weekDaysRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    height: 52,
-  },
-  weekDayItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  weekDayBarTrack: {
-    width: 16,
-    height: 36,
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: 4,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-    marginBottom: 4,
-  },
-  weekDayBar: {
-    width: 16,
-    backgroundColor: Colors.primaryMuted,
-    borderRadius: 4,
-  },
-  weekDayBarToday: {
-    backgroundColor: Colors.accent,
-  },
-  weekDayLabel: {
-    fontSize: 10,
-    fontWeight: '600' as const,
+  ringStatLabel: {
+    fontSize: 11,
     color: Colors.textMuted,
+    marginTop: 1,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
   },
-  weekDayLabelToday: {
-    color: Colors.accent,
-    fontWeight: '800' as const,
+  ringDivider: {
+    height: 1,
+    backgroundColor: Colors.divider,
   },
-  completedBanner: {
-    backgroundColor: '#E8F5E9',
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 14,
-    alignItems: 'center',
-  },
-  completedText: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: Colors.success,
+  trendCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
   },
   quickActions: {
     flexDirection: 'row',
@@ -509,9 +580,16 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
+  },
+  actionIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionLabel: {
     fontSize: 12,
@@ -532,27 +610,159 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  scienceTip: {
+  weekCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+  },
+  weekCardTitle: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.text,
+    marginBottom: 16,
+  },
+  weekDaysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    height: 52,
+  },
+  weekDayItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  weekDayBarTrack: {
+    width: 16,
+    height: 36,
+    backgroundColor: Colors.surfaceLight,
+    borderRadius: 4,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    marginBottom: 4,
+  },
+  weekDayBar: {
+    width: 16,
+    backgroundColor: Colors.primaryDim,
+    borderRadius: 4,
+  },
+  weekDayBarToday: {
     backgroundColor: Colors.primary,
+  },
+  weekDayLabel: {
+    fontSize: 10,
+    fontWeight: '600' as const,
+    color: Colors.textMuted,
+  },
+  weekDayLabelToday: {
+    color: Colors.primary,
+    fontWeight: '800' as const,
+  },
+  completedBanner: {
+    backgroundColor: Colors.primaryMuted,
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 14,
+    alignItems: 'center',
+  },
+  completedText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: Colors.primary,
+  },
+  scienceTip: {
+    backgroundColor: Colors.surface,
     borderRadius: 18,
     padding: 20,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.info,
   },
   tipLabel: {
     fontSize: 13,
     fontWeight: '700' as const,
-    color: Colors.accentLight,
+    color: Colors.info,
     marginBottom: 10,
   },
   tipText: {
     fontSize: 14,
-    color: '#E0E0E0',
+    color: Colors.textSecondary,
     lineHeight: 22,
     marginBottom: 10,
   },
   tipSource: {
     fontSize: 11,
-    color: '#8FAF9E',
+    color: Colors.textMuted,
     fontStyle: 'italic' as const,
+  },
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+  },
+  pickerContent: {
+    backgroundColor: Colors.surface,
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+  },
+  pickerTitle: {
+    fontSize: 20,
+    fontWeight: '800' as const,
+    color: Colors.text,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  pickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 8,
+    backgroundColor: Colors.surfaceLight,
+    gap: 12,
+  },
+  pickerItemActive: {
+    backgroundColor: Colors.primaryMuted,
+    borderWidth: 1,
+    borderColor: Colors.primary + '40',
+  },
+  pickerEmoji: {
+    fontSize: 28,
+  },
+  pickerInfo: {
+    flex: 1,
+  },
+  pickerName: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: Colors.text,
+  },
+  pickerMeta: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  pickerCheck: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pickerCheckText: {
+    color: Colors.background,
+    fontWeight: '700' as const,
+    fontSize: 14,
   },
 });

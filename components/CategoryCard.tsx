@@ -29,9 +29,9 @@ export default React.memo(function CategoryCard({ category, completed, total, on
     <Pressable onPress={onPress} style={styles.card}>
       <View style={styles.header}>
         <Text style={styles.emoji}>{categoryEmojis[category]}</Text>
-        <Text style={[styles.badge, { backgroundColor: color + '20', color }]}>
-          {completed}/{total}
-        </Text>
+        <View style={[styles.badge, { backgroundColor: color + '20' }]}>
+          <Text style={[styles.badgeText, { color }]}>{completed}/{total}</Text>
+        </View>
       </View>
       <Text style={styles.label}>{categoryLabels[category]}</Text>
       <View style={styles.progressTrack}>
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     width: '48%',
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
   header: {
     flexDirection: 'row',
@@ -61,12 +61,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   badge: {
-    fontSize: 11,
-    fontWeight: '700' as const,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
-    overflow: 'hidden',
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '700' as const,
   },
   label: {
     fontSize: 14,
@@ -76,7 +77,7 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 5,
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.surfaceLight,
     borderRadius: 3,
     overflow: 'hidden',
   },

@@ -15,10 +15,12 @@ export interface WeeklyLog {
 }
 
 export interface ChildProfile {
+  id: string;
   name: string;
   age: number;
   sport: string;
   avatarEmoji: string;
+  createdAt: string;
 }
 
 export interface GameEvent {
@@ -30,6 +32,7 @@ export interface GameEvent {
   location: string;
   notes: string;
   notifyBefore: number;
+  childId?: string;
 }
 
 export interface GameDayTip {
@@ -62,6 +65,7 @@ export interface Reward {
   isRedeemed: boolean;
   createdAt: string;
   redeemedAt: string | null;
+  childId?: string;
 }
 
 export type AppMode = 'parent' | 'child';
@@ -79,4 +83,17 @@ export interface ChildLog {
   soreness: string[];
   notes: string;
   createdAt: string;
+  childId?: string;
+}
+
+export interface TrendDataPoint {
+  label: string;
+  value: number;
+  date: string;
+}
+
+export interface WeeklyTrend {
+  weekLabel: string;
+  completionRate: number;
+  habitCount: number;
 }

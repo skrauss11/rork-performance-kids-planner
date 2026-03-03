@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
   accentBar: {
     width: 4,

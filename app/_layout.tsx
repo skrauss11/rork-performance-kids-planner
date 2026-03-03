@@ -4,6 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppProvider } from "@/providers/AppProvider";
+import Colors from "@/constants/colors";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -16,7 +17,8 @@ function RootLayoutNav() {
       <Stack.Screen
         name="article/[id]"
         options={{
-          headerStyle: { backgroundColor: '#FAFAF7' },
+          headerStyle: { backgroundColor: Colors.background },
+          headerTintColor: Colors.text,
           headerShadowVisible: false,
         }}
       />

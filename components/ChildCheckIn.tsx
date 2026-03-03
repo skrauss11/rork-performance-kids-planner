@@ -156,7 +156,6 @@ export default function ChildCheckIn({ onComplete, onBack }: ChildCheckInProps) 
   }, []);
 
   const canSubmit = mood && energy && sleepQuality;
-  const displayName = profile.name ? profile.name.split(' ')[0] : 'Champ';
 
   const renderStep = () => {
     switch (step) {
@@ -172,7 +171,7 @@ export default function ChildCheckIn({ onComplete, onBack }: ChildCheckInProps) 
                   key={m.value}
                   style={[
                     styles.moodOption,
-                    mood === m.value && { borderColor: m.color, backgroundColor: m.color + '15' },
+                    mood === m.value && { borderColor: m.color, backgroundColor: m.color + '20' },
                   ]}
                   onPress={() => handleSelectMood(m.value)}
                   testID={`mood-${m.value}`}
@@ -203,7 +202,7 @@ export default function ChildCheckIn({ onComplete, onBack }: ChildCheckInProps) 
                     key={level}
                     style={[
                       styles.energyOption,
-                      energy === level && { borderColor: colors[level - 1], backgroundColor: colors[level - 1] + '15' },
+                      energy === level && { borderColor: colors[level - 1], backgroundColor: colors[level - 1] + '20' },
                     ]}
                     onPress={() => handleSelectEnergy(level)}
                     testID={`energy-${level}`}
@@ -284,7 +283,7 @@ export default function ChildCheckIn({ onComplete, onBack }: ChildCheckInProps) 
             <TextInput
               style={styles.notesInput}
               placeholder="e.g. Legs felt heavy at practice, excited about the game..."
-              placeholderTextColor="#B0ADC8"
+              placeholderTextColor={Colors.textMuted}
               value={notes}
               onChangeText={setNotes}
               multiline
@@ -314,7 +313,7 @@ export default function ChildCheckIn({ onComplete, onBack }: ChildCheckInProps) 
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.navBar}>
         <Pressable onPress={goBack} style={styles.backBtn} hitSlop={12}>
-          <ChevronLeft size={24} color="#2D2B55" />
+          <ChevronLeft size={24} color={Colors.text} />
         </Pressable>
         <View style={styles.stepIndicator}>
           {Array.from({ length: totalSteps }).map((_, i) => (
@@ -347,7 +346,7 @@ export default function ChildCheckIn({ onComplete, onBack }: ChildCheckInProps) 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5FF',
+    backgroundColor: Colors.childBackground,
   },
   navBar: {
     flexDirection: 'row',
@@ -367,13 +366,13 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#E0DDFF',
+    backgroundColor: Colors.surfaceLight,
   },
   stepDotActive: {
-    backgroundColor: '#C5BFFF',
+    backgroundColor: Colors.childAccent + '60',
   },
   stepDotCurrent: {
-    backgroundColor: '#6C5CE7',
+    backgroundColor: Colors.childPrimary,
     width: 24,
   },
   scrollContent: {
@@ -391,13 +390,13 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 24,
     fontWeight: '800' as const,
-    color: '#2D2B55',
+    color: Colors.text,
     textAlign: 'center',
     marginBottom: 8,
   },
   stepSubtitle: {
     fontSize: 15,
-    color: '#8B87B3',
+    color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: 32,
   },
@@ -410,12 +409,12 @@ const styles = StyleSheet.create({
   },
   moodOption: {
     width: '28%',
-    backgroundColor: '#fff',
+    backgroundColor: Colors.childSurface,
     borderRadius: 20,
     padding: 18,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#E8E4FF',
+    borderColor: Colors.surfaceBorder,
   },
   moodOptionEmoji: {
     fontSize: 36,
@@ -424,7 +423,7 @@ const styles = StyleSheet.create({
   moodOptionLabel: {
     fontSize: 14,
     fontWeight: '700' as const,
-    color: '#2D2B55',
+    color: Colors.text,
   },
   energyGrid: {
     flexDirection: 'row',
@@ -435,12 +434,12 @@ const styles = StyleSheet.create({
   energyOption: {
     flex: 1,
     maxWidth: 68,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.childSurface,
     borderRadius: 18,
     paddingVertical: 16,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#E8E4FF',
+    borderColor: Colors.surfaceBorder,
   },
   energyEmoji: {
     fontSize: 26,
@@ -449,13 +448,13 @@ const styles = StyleSheet.create({
   energyNumber: {
     fontSize: 20,
     fontWeight: '800' as const,
-    color: '#2D2B55',
+    color: Colors.text,
     marginBottom: 2,
   },
   energyLabel: {
     fontSize: 11,
     fontWeight: '600' as const,
-    color: '#8B87B3',
+    color: Colors.textSecondary,
   },
   sleepGrid: {
     width: '100%',
@@ -464,16 +463,16 @@ const styles = StyleSheet.create({
   sleepOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: Colors.childSurface,
     borderRadius: 16,
     padding: 16,
     gap: 14,
     borderWidth: 2,
-    borderColor: '#E8E4FF',
+    borderColor: Colors.surfaceBorder,
   },
   sleepOptionActive: {
-    borderColor: '#6C5CE7',
-    backgroundColor: '#F0EDFF',
+    borderColor: Colors.childPrimary,
+    backgroundColor: Colors.childPrimary + '15',
   },
   sleepEmoji: {
     fontSize: 24,
@@ -481,10 +480,10 @@ const styles = StyleSheet.create({
   sleepLabel: {
     fontSize: 16,
     fontWeight: '700' as const,
-    color: '#2D2B55',
+    color: Colors.text,
   },
   sleepLabelActive: {
-    color: '#6C5CE7',
+    color: Colors.childPrimary,
   },
   sorenessGrid: {
     flexDirection: 'row',
@@ -498,24 +497,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 20,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.childSurface,
     borderWidth: 2,
-    borderColor: '#E8E4FF',
+    borderColor: Colors.surfaceBorder,
   },
   sorenessChipActive: {
-    backgroundColor: '#6C5CE7',
-    borderColor: '#6C5CE7',
+    backgroundColor: Colors.childPrimary,
+    borderColor: Colors.childPrimary,
   },
   sorenessText: {
     fontSize: 14,
     fontWeight: '600' as const,
-    color: '#2D2B55',
+    color: Colors.text,
   },
   sorenessTextActive: {
     color: '#fff',
   },
   nextBtn: {
-    backgroundColor: '#6C5CE7',
+    backgroundColor: Colors.childPrimary,
     paddingHorizontal: 40,
     paddingVertical: 14,
     borderRadius: 16,
@@ -527,26 +526,26 @@ const styles = StyleSheet.create({
   },
   notesInput: {
     width: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: Colors.childSurface,
     borderRadius: 18,
     padding: 18,
     fontSize: 16,
-    color: '#2D2B55',
+    color: Colors.text,
     borderWidth: 2,
-    borderColor: '#E8E4FF',
+    borderColor: Colors.surfaceBorder,
     minHeight: 120,
     textAlignVertical: 'top' as const,
     marginBottom: 8,
   },
   charCount: {
     fontSize: 12,
-    color: '#B0ADC8',
+    color: Colors.textMuted,
     alignSelf: 'flex-end',
     marginBottom: 24,
   },
   submitBtn: {
     flexDirection: 'row',
-    backgroundColor: '#6C5CE7',
+    backgroundColor: Colors.childPrimary,
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 18,

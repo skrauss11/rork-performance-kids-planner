@@ -16,7 +16,6 @@ const MOOD_EMOJIS: Record<string, string> = {
   rough: '😓',
 };
 
-const ENERGY_LABELS = ['', 'Low', 'Meh', 'Okay', 'Strong', 'On Fire!'];
 const ENERGY_COLORS = ['', '#EF5350', '#FF7043', '#FFA726', '#66BB6A', '#43A047'];
 
 interface ChildDashboardProps {
@@ -80,10 +79,8 @@ export default function ChildDashboard({ onCheckIn, onSwitchToParent }: ChildDas
               <Text style={styles.heyText}>Hey {displayName}!</Text>
               <Text style={styles.dateText}>{getFormattedDate()}</Text>
             </View>
-            <View style={styles.headerRight}>
-              <View style={styles.avatarBubble}>
-                <Text style={styles.avatarEmoji}>{profile.avatarEmoji || '⚡'}</Text>
-              </View>
+            <View style={styles.avatarBubble}>
+              <Text style={styles.avatarEmoji}>{profile.avatarEmoji || '⚡'}</Text>
             </View>
           </View>
         </Animated.View>
@@ -134,7 +131,7 @@ export default function ChildDashboard({ onCheckIn, onSwitchToParent }: ChildDas
               </View>
             </View>
             <View style={styles.checkInArrow}>
-              <Zap size={20} color={Colors.accent} />
+              <Zap size={20} color={Colors.childAccent} />
             </View>
           </Pressable>
         )}
@@ -174,9 +171,7 @@ export default function ChildDashboard({ onCheckIn, onSwitchToParent }: ChildDas
                 testID={`child-habit-${habit.id}`}
               >
                 <View style={[styles.habitCheck, isDone && styles.habitCheckDone]}>
-                  {isDone ? (
-                    <Text style={styles.habitCheckEmoji}>✓</Text>
-                  ) : null}
+                  {isDone ? <Text style={styles.habitCheckEmoji}>✓</Text> : null}
                 </View>
                 <View style={styles.habitInfo}>
                   <View style={styles.habitTitleRow}>
@@ -266,7 +261,7 @@ export default function ChildDashboard({ onCheckIn, onSwitchToParent }: ChildDas
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5FF',
+    backgroundColor: Colors.childBackground,
   },
   scrollContent: {
     padding: 20,
@@ -281,33 +276,32 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
   },
-  headerRight: {},
   heyText: {
     fontSize: 28,
     fontWeight: '800' as const,
-    color: '#2D2B55',
+    color: Colors.text,
     letterSpacing: -0.5,
   },
   dateText: {
     fontSize: 14,
-    color: '#8B87B3',
+    color: Colors.textSecondary,
     marginTop: 4,
   },
   avatarBubble: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#E8E4FF',
+    backgroundColor: Colors.childSurface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: '#C5BFFF',
+    borderColor: Colors.childAccent + '40',
   },
   avatarEmoji: {
     fontSize: 26,
   },
   checkInCard: {
-    backgroundColor: '#6C5CE7',
+    backgroundColor: Colors.childPrimary,
     borderRadius: 20,
     padding: 20,
     flexDirection: 'row',
@@ -339,12 +333,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   moodCard: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.childSurface,
     borderRadius: 20,
     padding: 18,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E8E4FF',
+    borderColor: Colors.childAccent + '20',
   },
   moodHeader: {
     flexDirection: 'row',
@@ -355,7 +349,7 @@ const styles = StyleSheet.create({
   moodTitle: {
     fontSize: 16,
     fontWeight: '700' as const,
-    color: '#2D2B55',
+    color: Colors.text,
   },
   moodEmoji: {
     fontSize: 28,
@@ -370,20 +364,20 @@ const styles = StyleSheet.create({
   },
   moodStatLabel: {
     fontSize: 11,
-    color: '#8B87B3',
+    color: Colors.textSecondary,
     marginBottom: 4,
     fontWeight: '600' as const,
   },
   moodStatValue: {
     fontSize: 14,
     fontWeight: '700' as const,
-    color: '#2D2B55',
+    color: Colors.text,
     textTransform: 'capitalize' as const,
   },
   moodDivider: {
     width: 1,
     height: 28,
-    backgroundColor: '#E8E4FF',
+    backgroundColor: Colors.surfaceBorder,
   },
   energyRow: {
     flexDirection: 'row',
@@ -393,22 +387,22 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#E8E4FF',
+    backgroundColor: Colors.surfaceLight,
   },
   moodNote: {
     marginTop: 12,
     fontSize: 13,
-    color: '#8B87B3',
+    color: Colors.textSecondary,
     fontStyle: 'italic' as const,
     textAlign: 'center',
   },
   progressCard: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.childSurface,
     borderRadius: 20,
     padding: 18,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E8E4FF',
+    borderColor: Colors.childAccent + '20',
   },
   progressTop: {
     flexDirection: 'row',
@@ -419,11 +413,11 @@ const styles = StyleSheet.create({
   progressTitle: {
     fontSize: 17,
     fontWeight: '700' as const,
-    color: '#2D2B55',
+    color: Colors.text,
   },
   progressBadge: {
     flexDirection: 'row',
-    backgroundColor: '#6C5CE7',
+    backgroundColor: Colors.childPrimary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
@@ -437,23 +431,23 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 12,
-    backgroundColor: '#F0EDFF',
+    backgroundColor: Colors.surfaceLight,
     borderRadius: 6,
     overflow: 'hidden',
     marginBottom: 10,
   },
   progressBar: {
     height: 12,
-    backgroundColor: '#6C5CE7',
+    backgroundColor: Colors.childPrimary,
     borderRadius: 6,
   },
   progressHint: {
     fontSize: 13,
-    color: '#8B87B3',
+    color: Colors.textSecondary,
     textAlign: 'center',
   },
   allDoneBanner: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: Colors.primaryMuted,
     borderRadius: 12,
     padding: 12,
     alignItems: 'center',
@@ -461,7 +455,7 @@ const styles = StyleSheet.create({
   allDoneText: {
     fontSize: 15,
     fontWeight: '700' as const,
-    color: '#2D6A4F',
+    color: Colors.primary,
   },
   habitsSection: {
     marginBottom: 16,
@@ -469,36 +463,36 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700' as const,
-    color: '#2D2B55',
+    color: Colors.text,
     marginBottom: 12,
   },
   habitRow: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.childSurface,
     borderRadius: 16,
     padding: 14,
     marginBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E8E4FF',
+    borderColor: Colors.surfaceBorder,
   },
   habitRowDone: {
-    backgroundColor: '#F0FFF4',
-    borderColor: '#C8E6D0',
+    backgroundColor: Colors.primaryMuted,
+    borderColor: Colors.primary + '30',
   },
   habitCheck: {
     width: 32,
     height: 32,
     borderRadius: 16,
     borderWidth: 2.5,
-    borderColor: '#D4D0F0',
+    borderColor: Colors.surfaceBorder,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
   },
   habitCheckDone: {
-    backgroundColor: '#6C5CE7',
-    borderColor: '#6C5CE7',
+    backgroundColor: Colors.childPrimary,
+    borderColor: Colors.childPrimary,
   },
   habitCheckEmoji: {
     fontSize: 16,
@@ -520,11 +514,11 @@ const styles = StyleSheet.create({
   habitTitle: {
     fontSize: 15,
     fontWeight: '600' as const,
-    color: '#2D2B55',
+    color: Colors.text,
     flex: 1,
   },
   habitTitleDone: {
-    color: '#8B87B3',
+    color: Colors.textSecondary,
     textDecorationLine: 'line-through',
   },
   habitWeekDots: {
@@ -536,10 +530,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#E8E4FF',
+    backgroundColor: Colors.surfaceLight,
   },
   habitDayDotDone: {
-    backgroundColor: '#6C5CE7',
+    backgroundColor: Colors.childPrimary,
   },
   habitDayDotToday: {
     borderWidth: 1.5,
@@ -548,16 +542,16 @@ const styles = StyleSheet.create({
   habitWeekCount: {
     fontSize: 11,
     fontWeight: '700' as const,
-    color: '#8B87B3',
+    color: Colors.textSecondary,
     marginLeft: 4,
   },
   rewardCard: {
-    backgroundColor: '#FFFBEB',
+    backgroundColor: Colors.rewardLight,
     borderRadius: 20,
     padding: 18,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: Colors.reward + '30',
   },
   rewardTop: {
     flexDirection: 'row',
@@ -574,31 +568,31 @@ const styles = StyleSheet.create({
   rewardTitle: {
     fontSize: 16,
     fontWeight: '700' as const,
-    color: '#92400E',
+    color: Colors.reward,
   },
   rewardProgress: {
     fontSize: 13,
-    color: '#B45309',
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   rewardTrack: {
     height: 10,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: Colors.surfaceLight,
     borderRadius: 5,
     overflow: 'hidden',
   },
   rewardBar: {
     height: 10,
-    backgroundColor: '#D4A017',
+    backgroundColor: Colors.reward,
     borderRadius: 5,
   },
   weekSummary: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.childSurface,
     borderRadius: 20,
     padding: 18,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#E8E4FF',
+    borderColor: Colors.surfaceBorder,
   },
   weekBarRow: {
     flexDirection: 'row',
@@ -614,7 +608,7 @@ const styles = StyleSheet.create({
   weekBarTrack: {
     width: 18,
     height: 44,
-    backgroundColor: '#F0EDFF',
+    backgroundColor: Colors.surfaceLight,
     borderRadius: 6,
     overflow: 'hidden',
     justifyContent: 'flex-end',
@@ -622,24 +616,24 @@ const styles = StyleSheet.create({
   },
   weekBarFill: {
     width: 18,
-    backgroundColor: '#C5BFFF',
+    backgroundColor: Colors.childAccent + '60',
     borderRadius: 6,
   },
   weekBarToday: {
-    backgroundColor: '#6C5CE7',
+    backgroundColor: Colors.childPrimary,
   },
   weekBarLabel: {
     fontSize: 11,
     fontWeight: '600' as const,
-    color: '#8B87B3',
+    color: Colors.textSecondary,
   },
   weekBarLabelToday: {
-    color: '#6C5CE7',
+    color: Colors.childPrimary,
     fontWeight: '800' as const,
   },
   weekPct: {
     fontSize: 13,
-    color: '#8B87B3',
+    color: Colors.textSecondary,
     textAlign: 'center',
   },
   parentSwitch: {

@@ -15,7 +15,7 @@ export default React.memo(function ScienceNote({ note }: ScienceNoteProps) {
   return (
     <Pressable onPress={toggle} style={styles.container}>
       <View style={styles.header}>
-        <FlaskConical size={14} color={Colors.primaryMuted} />
+        <FlaskConical size={14} color={Colors.primary} />
         <Text style={styles.label}>Science</Text>
         {expanded ? (
           <ChevronUp size={14} color={Colors.textMuted} />
@@ -30,7 +30,7 @@ export default React.memo(function ScienceNote({ note }: ScienceNoteProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#F0F7F3',
+    backgroundColor: Colors.primaryMuted,
     borderRadius: 10,
     padding: 12,
     marginTop: 6,
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: '600' as const,
-    color: Colors.primaryMuted,
+    color: Colors.primary,
     flex: 1,
   },
   note: {

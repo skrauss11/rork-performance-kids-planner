@@ -2,67 +2,85 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
-import { Habit, ChildProfile, HabitCategory, GameEvent, Reward, AppMode, ChildLog } from '@/types';
+import { Habit, ChildProfile, HabitCategory, GameEvent, Reward, AppMode, ChildLog, TrendDataPoint } from '@/types';
 import { defaultHabits } from '@/mocks/habits';
 import { getWeekKey, getDayOfWeekIndex } from '@/utils/date';
 
 const HABITS_KEY = 'peakjr_habits_weekly';
-const PROFILE_KEY = 'peakjr_profile';
+const CHILDREN_KEY = 'peakjr_children';
+const ACTIVE_CHILD_KEY = 'peakjr_active_child';
 const STREAK_KEY = 'peakjr_streak';
 const EVENTS_KEY = 'peakjr_events';
 const REWARDS_KEY = 'peakjr_rewards';
 const MODE_KEY = 'peakjr_mode';
 const PIN_KEY = 'peakjr_parent_pin';
 const CHILD_LOGS_KEY = 'peakjr_child_logs';
+const TREND_KEY = 'peakjr_trend_history';
 
 interface StreakData {
   current: number;
   lastCompletedWeek: string | null;
 }
 
+interface TrendHistory {
+  weeklyRates: TrendDataPoint[];
+}
+
 export const [AppProvider, useApp] = createContextHook(() => {
   const queryClient = useQueryClient();
   const [habits, setHabits] = useState<Habit[]>(defaultHabits);
-  const [profile, setProfile] = useState<ChildProfile>({
-    name: '',
-    age: 10,
-    sport: '',
-    avatarEmoji: '⚡',
-  });
+  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [activeChildId, setActiveChildId] = useState<string | null>(null);
   const [streak, setStreak] = useState<StreakData>({ current: 0, lastCompletedWeek: null });
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [appMode, setAppMode] = useState<AppMode>('parent');
   const [parentPin, setParentPin] = useState<string>('');
   const [childLogs, setChildLogs] = useState<ChildLog[]>([]);
+  const [trendHistory, setTrendHistory] = useState<TrendHistory>({ weeklyRates: [] });
 
   const weekKey = getWeekKey();
   const todayIndex = getDayOfWeekIndex();
 
+  const activeChild = useMemo(() => {
+    if (!activeChildId) return children[0] ?? null;
+    return children.find(c => c.id === activeChildId) ?? children[0] ?? null;
+  }, [children, activeChildId]);
+
+  const childStorageKey = useMemo(() => {
+    return activeChild?.id ?? 'default';
+  }, [activeChild]);
+
   const habitsQuery = useQuery({
-    queryKey: ['habits', weekKey],
+    queryKey: ['habits', weekKey, childStorageKey],
     queryFn: async () => {
-      const stored = await AsyncStorage.getItem(`${HABITS_KEY}_${weekKey}`);
-      if (stored) {
-        return JSON.parse(stored) as Habit[];
-      }
+      const stored = await AsyncStorage.getItem(`${HABITS_KEY}_${childStorageKey}_${weekKey}`);
+      if (stored) return JSON.parse(stored) as Habit[];
       return defaultHabits;
     },
   });
 
-  const profileQuery = useQuery({
-    queryKey: ['profile'],
+  const childrenQuery = useQuery({
+    queryKey: ['children'],
     queryFn: async () => {
-      const stored = await AsyncStorage.getItem(PROFILE_KEY);
-      if (stored) return JSON.parse(stored) as ChildProfile;
-      return null;
+      const stored = await AsyncStorage.getItem(CHILDREN_KEY);
+      if (stored) return JSON.parse(stored) as ChildProfile[];
+      return [] as ChildProfile[];
+    },
+  });
+
+  const activeChildQuery = useQuery({
+    queryKey: ['activeChild'],
+    queryFn: async () => {
+      const stored = await AsyncStorage.getItem(ACTIVE_CHILD_KEY);
+      return stored;
     },
   });
 
   const streakQuery = useQuery({
-    queryKey: ['streak'],
+    queryKey: ['streak', childStorageKey],
     queryFn: async () => {
-      const stored = await AsyncStorage.getItem(STREAK_KEY);
+      const stored = await AsyncStorage.getItem(`${STREAK_KEY}_${childStorageKey}`);
       if (stored) return JSON.parse(stored) as StreakData;
       return { current: 0, lastCompletedWeek: null } as StreakData;
     },
@@ -103,11 +121,20 @@ export const [AppProvider, useApp] = createContextHook(() => {
   });
 
   const childLogsQuery = useQuery({
-    queryKey: ['childLogs'],
+    queryKey: ['childLogs', childStorageKey],
     queryFn: async () => {
-      const stored = await AsyncStorage.getItem(CHILD_LOGS_KEY);
+      const stored = await AsyncStorage.getItem(`${CHILD_LOGS_KEY}_${childStorageKey}`);
       if (stored) return JSON.parse(stored) as ChildLog[];
       return [] as ChildLog[];
+    },
+  });
+
+  const trendQuery = useQuery({
+    queryKey: ['trendHistory', childStorageKey],
+    queryFn: async () => {
+      const stored = await AsyncStorage.getItem(`${TREND_KEY}_${childStorageKey}`);
+      if (stored) return JSON.parse(stored) as TrendHistory;
+      return { weeklyRates: [] } as TrendHistory;
     },
   });
 
@@ -116,8 +143,12 @@ export const [AppProvider, useApp] = createContextHook(() => {
   }, [habitsQuery.data]);
 
   useEffect(() => {
-    if (profileQuery.data) setProfile(profileQuery.data);
-  }, [profileQuery.data]);
+    if (childrenQuery.data) setChildren(childrenQuery.data);
+  }, [childrenQuery.data]);
+
+  useEffect(() => {
+    if (activeChildQuery.data !== undefined) setActiveChildId(activeChildQuery.data);
+  }, [activeChildQuery.data]);
 
   useEffect(() => {
     if (streakQuery.data) setStreak(streakQuery.data);
@@ -143,23 +174,41 @@ export const [AppProvider, useApp] = createContextHook(() => {
     if (childLogsQuery.data) setChildLogs(childLogsQuery.data);
   }, [childLogsQuery.data]);
 
+  useEffect(() => {
+    if (trendQuery.data) setTrendHistory(trendQuery.data);
+  }, [trendQuery.data]);
+
   const saveHabitsMutation = useMutation({
     mutationFn: async (updated: Habit[]) => {
-      await AsyncStorage.setItem(`${HABITS_KEY}_${weekKey}`, JSON.stringify(updated));
+      await AsyncStorage.setItem(`${HABITS_KEY}_${childStorageKey}_${weekKey}`, JSON.stringify(updated));
       return updated;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['habits', weekKey] });
+      queryClient.invalidateQueries({ queryKey: ['habits', weekKey, childStorageKey] });
     },
   });
 
-  const saveProfileMutation = useMutation({
-    mutationFn: async (p: ChildProfile) => {
-      await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(p));
-      return p;
+  const saveChildrenMutation = useMutation({
+    mutationFn: async (updated: ChildProfile[]) => {
+      await AsyncStorage.setItem(CHILDREN_KEY, JSON.stringify(updated));
+      return updated;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['children'] });
+    },
+  });
+
+  const saveActiveChildMutation = useMutation({
+    mutationFn: async (childId: string | null) => {
+      if (childId) {
+        await AsyncStorage.setItem(ACTIVE_CHILD_KEY, childId);
+      } else {
+        await AsyncStorage.removeItem(ACTIVE_CHILD_KEY);
+      }
+      return childId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['activeChild'] });
     },
   });
 
@@ -205,11 +254,21 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   const saveChildLogsMutation = useMutation({
     mutationFn: async (updated: ChildLog[]) => {
-      await AsyncStorage.setItem(CHILD_LOGS_KEY, JSON.stringify(updated));
+      await AsyncStorage.setItem(`${CHILD_LOGS_KEY}_${childStorageKey}`, JSON.stringify(updated));
       return updated;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['childLogs'] });
+      queryClient.invalidateQueries({ queryKey: ['childLogs', childStorageKey] });
+    },
+  });
+
+  const saveTrendMutation = useMutation({
+    mutationFn: async (updated: TrendHistory) => {
+      await AsyncStorage.setItem(`${TREND_KEY}_${childStorageKey}`, JSON.stringify(updated));
+      return updated;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trendHistory', childStorageKey] });
     },
   });
 
@@ -225,12 +284,76 @@ export const [AppProvider, useApp] = createContextHook(() => {
       saveHabitsMutation.mutate(updated);
       return updated;
     });
-  }, [todayIndex]);
+  }, [todayIndex, childStorageKey, weekKey]);
 
-  const updateProfile = useCallback((p: ChildProfile) => {
-    setProfile(p);
-    saveProfileMutation.mutate(p);
+  const addChild = useCallback((child: ChildProfile) => {
+    console.log('[AppProvider] Adding child:', child.name);
+    setChildren(prev => {
+      const updated = [...prev, child];
+      saveChildrenMutation.mutate(updated);
+      return updated;
+    });
+    if (children.length === 0) {
+      setActiveChildId(child.id);
+      saveActiveChildMutation.mutate(child.id);
+    }
+  }, [children.length]);
+
+  const updateChild = useCallback((child: ChildProfile) => {
+    console.log('[AppProvider] Updating child:', child.name);
+    setChildren(prev => {
+      const updated = prev.map(c => c.id === child.id ? child : c);
+      saveChildrenMutation.mutate(updated);
+      return updated;
+    });
   }, []);
+
+  const removeChild = useCallback((childId: string) => {
+    console.log('[AppProvider] Removing child:', childId);
+    setChildren(prev => {
+      const updated = prev.filter(c => c.id !== childId);
+      saveChildrenMutation.mutate(updated);
+      if (activeChildId === childId) {
+        const newActive = updated[0]?.id ?? null;
+        setActiveChildId(newActive);
+        saveActiveChildMutation.mutate(newActive);
+      }
+      return updated;
+    });
+  }, [activeChildId]);
+
+  const switchActiveChild = useCallback((childId: string) => {
+    console.log('[AppProvider] Switching to child:', childId);
+    setActiveChildId(childId);
+    saveActiveChildMutation.mutate(childId);
+    queryClient.invalidateQueries({ queryKey: ['habits'] });
+    queryClient.invalidateQueries({ queryKey: ['childLogs'] });
+    queryClient.invalidateQueries({ queryKey: ['streak'] });
+    queryClient.invalidateQueries({ queryKey: ['trendHistory'] });
+  }, []);
+
+  const updateProfile = useCallback((p: Omit<ChildProfile, 'id' | 'createdAt'> & { id?: string; createdAt?: string }) => {
+    if (activeChild) {
+      const updated: ChildProfile = {
+        ...activeChild,
+        name: p.name,
+        age: p.age,
+        sport: p.sport,
+        avatarEmoji: p.avatarEmoji,
+      };
+      updateChild(updated);
+    } else {
+      const newChild: ChildProfile = {
+        id: `child-${Date.now()}`,
+        name: p.name,
+        age: p.age,
+        sport: p.sport,
+        avatarEmoji: p.avatarEmoji,
+        createdAt: new Date().toISOString(),
+      };
+      addChild(newChild);
+    }
+  }, [activeChild, updateChild, addChild]);
 
   const addEvent = useCallback((event: GameEvent) => {
     setEvents(prev => {
@@ -311,7 +434,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
       saveChildLogsMutation.mutate(updated);
       return updated;
     });
-  }, []);
+  }, [childStorageKey]);
 
   const todayLog = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -396,9 +519,54 @@ export const [AppProvider, useApp] = createContextHook(() => {
     [rewards]
   );
 
+  const dailyCompletionData = useMemo((): TrendDataPoint[] => {
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return labels.map((label, i) => {
+      const dayCompleted = habits.filter(h => h.completedDays[i]).length;
+      const pct = totalCount > 0 ? Math.round((dayCompleted / totalCount) * 100) : 0;
+      return { label, value: pct, date: '' };
+    });
+  }, [habits, totalCount]);
+
+  const moodTrendData = useMemo((): TrendDataPoint[] => {
+    const moodValues: Record<string, number> = {
+      great: 5, good: 4, okay: 3, tired: 2, rough: 1,
+    };
+    return recentLogs.slice().reverse().map(log => ({
+      label: new Date(log.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short' }),
+      value: moodValues[log.mood] ?? 3,
+      date: log.date,
+    }));
+  }, [recentLogs]);
+
+  const energyTrendData = useMemo((): TrendDataPoint[] => {
+    return recentLogs.slice().reverse().map(log => ({
+      label: new Date(log.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short' }),
+      value: log.energy,
+      date: log.date,
+    }));
+  }, [recentLogs]);
+
+  const profile = useMemo((): ChildProfile => {
+    if (activeChild) return activeChild;
+    return {
+      id: 'default',
+      name: '',
+      age: 10,
+      sport: '',
+      avatarEmoji: '⚡',
+      createdAt: new Date().toISOString(),
+    };
+  }, [activeChild]);
+
+  const hasProfile = useMemo(() => children.length > 0 && !!activeChild?.name, [children, activeChild]);
+
   return {
     habits,
     profile,
+    children,
+    activeChild,
+    activeChildId,
     streak,
     events,
     upcomingEvents,
@@ -406,6 +574,10 @@ export const [AppProvider, useApp] = createContextHook(() => {
     activeRewards,
     redeemedRewards,
     toggleHabit,
+    addChild,
+    updateChild,
+    removeChild,
+    switchActiveChild,
     updateProfile,
     addEvent,
     removeEvent,
@@ -423,8 +595,8 @@ export const [AppProvider, useApp] = createContextHook(() => {
     habitsByCategory,
     categoryProgress,
     todayIndex,
-    isLoading: habitsQuery.isLoading || profileQuery.isLoading,
-    hasProfile: !!profile.name,
+    isLoading: habitsQuery.isLoading || childrenQuery.isLoading,
+    hasProfile,
     appMode,
     parentPin,
     childLogs,
@@ -434,6 +606,10 @@ export const [AppProvider, useApp] = createContextHook(() => {
     setPin,
     verifyPin,
     addChildLog,
+    dailyCompletionData,
+    moodTrendData,
+    energyTrendData,
+    trendHistory,
   };
 });
 

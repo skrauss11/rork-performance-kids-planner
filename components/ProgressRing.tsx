@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Text } from 'react-native';
+import Svg, { Circle as SvgCircle } from 'react-native-svg';
 import Colors from '@/constants/colors';
 
 interface ProgressRingProps {
@@ -7,13 +8,15 @@ interface ProgressRingProps {
   size?: number;
   strokeWidth?: number;
   showLabel?: boolean;
+  color?: string;
 }
 
 export default function ProgressRing({
   percentage,
   size = 120,
-  strokeWidth = 10,
+  strokeWidth = 8,
   showLabel = true,
+  color = Colors.primary,
 }: ProgressRingProps) {
   const animatedValue = useRef(new Animated.Value(0)).current;
 
@@ -27,32 +30,36 @@ export default function ProgressRing({
 
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  const center = size / 2;
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
-      <View style={[styles.ring, { width: size, height: size, borderRadius: size / 2, borderWidth: strokeWidth, borderColor: Colors.surfaceAlt }]} />
-      <View style={[styles.progressContainer, { width: size, height: size }]}>
-        <View
-          style={[
-            styles.progressArc,
-            {
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              borderWidth: strokeWidth,
-              borderColor: 'transparent',
-              borderTopColor: percentage > 0 ? Colors.primary : 'transparent',
-              borderRightColor: percentage > 25 ? Colors.primary : 'transparent',
-              borderBottomColor: percentage > 50 ? Colors.primary : 'transparent',
-              borderLeftColor: percentage > 75 ? Colors.primary : 'transparent',
-              transform: [{ rotate: '-45deg' }],
-            },
-          ]}
+      <Svg width={size} height={size}>
+        <SvgCircle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={Colors.surfaceLight}
+          strokeWidth={strokeWidth}
+          fill="none"
         />
-      </View>
+        <SvgCircle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={`${circumference} ${circumference}`}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${center} ${center})`}
+        />
+      </Svg>
       {showLabel && (
         <View style={styles.labelContainer}>
-          <Text style={styles.percentageText}>{percentage}%</Text>
+          <Text style={[styles.percentageText, { color }]}>{percentage}%</Text>
           <Text style={styles.labelText}>complete</Text>
         </View>
       )}
@@ -65,22 +72,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ring: {
-    position: 'absolute',
-  },
-  progressContainer: {
-    position: 'absolute',
-  },
-  progressArc: {
-    position: 'absolute',
-  },
   labelContainer: {
+    position: 'absolute',
     alignItems: 'center',
   },
   percentageText: {
     fontSize: 28,
     fontWeight: '700' as const,
-    color: Colors.primary,
     letterSpacing: -1,
   },
   labelText: {

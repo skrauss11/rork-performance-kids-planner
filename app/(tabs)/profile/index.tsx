@@ -1,17 +1,22 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Alert, Platform, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Save, User, Calendar, Trophy, Sparkles, Users, Lock, Shield, ChevronRight, Eye, EyeOff } from 'lucide-react-native';
+import { Save, User, Calendar, Trophy, Sparkles, Users, Lock, Shield, ChevronRight, Eye, EyeOff, Plus, Trash2, UserPlus } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { useApp } from '@/providers/AppProvider';
+import { ChildProfile } from '@/types';
 
 const sportOptions = ['Soccer', 'Basketball', 'Baseball', 'Swimming', 'Tennis', 'Track & Field', 'Gymnastics', 'Football', 'Volleyball', 'Hockey', 'Martial Arts', 'Dance', 'Multi-Sport', 'Other'];
 const emojiOptions = ['⚡', '🏆', '🌟', '🔥', '💪', '🎯', '🦁', '🐺', '🦅', '🏅'];
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { profile, updateProfile, streak, todayCompletedCount, hasProfile, appMode, switchMode, parentPin, setPin, recentLogs, childLogs } = useApp();
+  const {
+    profile, updateProfile, streak, todayCompletedCount, hasProfile,
+    switchMode, parentPin, setPin, recentLogs, children,
+    addChild, removeChild, switchActiveChild, activeChild,
+  } = useApp();
   const [name, setName] = useState<string>(profile.name);
   const [age, setAge] = useState<string>(profile.age.toString());
   const [sport, setSport] = useState<string>(profile.sport);
@@ -21,6 +26,11 @@ export default function ProfileScreen() {
   const [newPin, setNewPin] = useState<string>('');
   const [confirmPin, setConfirmPin] = useState<string>('');
   const [showPin, setShowPin] = useState<boolean>(false);
+  const [showAddChild, setShowAddChild] = useState<boolean>(false);
+  const [newChildName, setNewChildName] = useState<string>('');
+  const [newChildAge, setNewChildAge] = useState<string>('10');
+  const [newChildSport, setNewChildSport] = useState<string>('');
+  const [newChildEmoji, setNewChildEmoji] = useState<string>('⚡');
 
   const handleSwitchToChild = useCallback(() => {
     if (Platform.OS !== 'web') {
@@ -46,7 +56,7 @@ export default function ProfileScreen() {
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-    Alert.alert('PIN Set', 'Your parent PIN has been set. This will be required to switch back from child mode.');
+    Alert.alert('PIN Set', 'Your parent PIN has been set.');
   }, [newPin, confirmPin, setPin]);
 
   const handleRemovePin = useCallback(() => {
@@ -55,6 +65,42 @@ export default function ProfileScreen() {
       { text: 'Remove', style: 'destructive', onPress: () => setPin('') },
     ]);
   }, [setPin]);
+
+  const handleAddNewChild = useCallback(() => {
+    if (!newChildName.trim()) {
+      Alert.alert('Name Required', 'Please enter the child\'s name.');
+      return;
+    }
+    const parsedAge = parseInt(newChildAge, 10);
+    if (isNaN(parsedAge) || parsedAge < 3 || parsedAge > 18) {
+      Alert.alert('Invalid Age', 'Please enter an age between 3 and 18.');
+      return;
+    }
+    const child: ChildProfile = {
+      id: `child-${Date.now()}`,
+      name: newChildName.trim(),
+      age: parsedAge,
+      sport: newChildSport,
+      avatarEmoji: newChildEmoji,
+      createdAt: new Date().toISOString(),
+    };
+    addChild(child);
+    setShowAddChild(false);
+    setNewChildName('');
+    setNewChildAge('10');
+    setNewChildSport('');
+    setNewChildEmoji('⚡');
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [newChildName, newChildAge, newChildSport, newChildEmoji, addChild]);
+
+  const handleRemoveChild = useCallback((childId: string, childName: string) => {
+    Alert.alert('Remove Athlete?', `Remove "${childName}" and all their data?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => removeChild(childId) },
+    ]);
+  }, [removeChild]);
 
   const MOOD_EMOJIS: Record<string, string> = {
     great: '🤩', good: '😊', okay: '😐', tired: '😴', rough: '😓',
@@ -65,24 +111,15 @@ export default function ProfileScreen() {
       Alert.alert('Name Required', 'Please enter your child\'s name.');
       return;
     }
-
     const parsedAge = parseInt(age, 10);
     if (isNaN(parsedAge) || parsedAge < 3 || parsedAge > 18) {
       Alert.alert('Invalid Age', 'Please enter an age between 3 and 18.');
       return;
     }
-
-    updateProfile({
-      name: name.trim(),
-      age: parsedAge,
-      sport,
-      avatarEmoji,
-    });
-
+    updateProfile({ name: name.trim(), age: parsedAge, sport, avatarEmoji });
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }, [name, age, sport, avatarEmoji, updateProfile]);
@@ -92,8 +129,47 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
-          <Text style={styles.subtitle}>Set up your young athlete's profile</Text>
+          <Text style={styles.subtitle}>Manage your athletes</Text>
         </View>
+
+        {children.length > 0 && (
+          <View style={styles.childrenSection}>
+            <View style={styles.childrenHeader}>
+              <Text style={styles.sectionTitle}>Athletes</Text>
+              <Pressable style={styles.addChildBtn} onPress={() => setShowAddChild(true)}>
+                <Plus size={16} color={Colors.primary} />
+                <Text style={styles.addChildText}>Add</Text>
+              </Pressable>
+            </View>
+            {children.map(child => (
+              <Pressable
+                key={child.id}
+                style={[styles.childCard, child.id === activeChild?.id && styles.childCardActive]}
+                onPress={() => switchActiveChild(child.id)}
+              >
+                <Text style={styles.childEmoji}>{child.avatarEmoji}</Text>
+                <View style={styles.childInfo}>
+                  <Text style={styles.childName}>{child.name}</Text>
+                  <Text style={styles.childMeta}>Age {child.age} · {child.sport || 'No sport set'}</Text>
+                </View>
+                {child.id === activeChild?.id && (
+                  <View style={styles.activeIndicator}>
+                    <Text style={styles.activeText}>Active</Text>
+                  </View>
+                )}
+                {children.length > 1 && (
+                  <Pressable
+                    style={styles.removeChildBtn}
+                    onPress={() => handleRemoveChild(child.id, child.name)}
+                    hitSlop={10}
+                  >
+                    <Trash2 size={16} color={Colors.textMuted} />
+                  </Pressable>
+                )}
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         <View style={styles.avatarSection}>
           <View style={styles.avatarCircle}>
@@ -116,9 +192,9 @@ export default function ProfileScreen() {
 
         <View style={styles.formSection}>
           <View style={styles.inputGroup}>
-            <View style={styles.inputLabel}>
+            <View style={styles.inputLabelRow}>
               <User size={14} color={Colors.textSecondary} />
-              <Text style={styles.labelText}>Child's Name</Text>
+              <Text style={styles.labelText}>Athlete&apos;s Name</Text>
             </View>
             <TextInput
               style={styles.input}
@@ -130,7 +206,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <View style={styles.inputLabel}>
+            <View style={styles.inputLabelRow}>
               <Calendar size={14} color={Colors.textSecondary} />
               <Text style={styles.labelText}>Age</Text>
             </View>
@@ -146,7 +222,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <View style={styles.inputLabel}>
+            <View style={styles.inputLabelRow}>
               <Trophy size={14} color={Colors.textSecondary} />
               <Text style={styles.labelText}>Primary Sport</Text>
             </View>
@@ -167,30 +243,32 @@ export default function ProfileScreen() {
         </View>
 
         <Pressable onPress={handleSave} style={[styles.saveButton, saved && styles.saveButtonSaved]}>
-          {saved ? (
-            <Sparkles size={18} color="#fff" />
-          ) : (
-            <Save size={18} color="#fff" />
-          )}
+          {saved ? <Sparkles size={18} color={Colors.background} /> : <Save size={18} color={Colors.background} />}
           <Text style={styles.saveButtonText}>{saved ? 'Saved!' : 'Save Profile'}</Text>
         </Pressable>
 
+        {children.length === 0 && (
+          <Pressable style={styles.firstChildCard} onPress={() => setShowAddChild(true)}>
+            <UserPlus size={24} color={Colors.primary} />
+            <Text style={styles.firstChildTitle}>Add Your First Athlete</Text>
+            <Text style={styles.firstChildSub}>Set up a profile to start tracking habits and performance</Text>
+          </Pressable>
+        )}
+
         <View style={styles.modeSection}>
-          <Text style={styles.modeSectionTitle}>Child Mode</Text>
+          <Text style={styles.sectionTitle}>Child Mode</Text>
           <Text style={styles.modeSectionSubtitle}>
-            Let your child check in with how they're feeling, log mood & energy, and track their habits in a fun interface.
+            Let your child see their own version of the app with check-ins and habit tracking.
           </Text>
 
           <Pressable style={styles.modeCard} onPress={handleSwitchToChild} testID="switch-child-mode">
             <View style={styles.modeCardLeft}>
               <View style={styles.modeIconWrap}>
-                <Users size={22} color="#6C5CE7" />
+                <Users size={22} color={Colors.childPrimary} />
               </View>
               <View>
                 <Text style={styles.modeCardTitle}>Switch to Child Mode</Text>
-                <Text style={styles.modeCardSub}>
-                  {appMode === 'child' ? 'Currently active' : 'Hand the phone to your child'}
-                </Text>
+                <Text style={styles.modeCardSub}>Hand the phone to your child</Text>
               </View>
             </View>
             <ChevronRight size={20} color={Colors.textMuted} />
@@ -201,14 +279,12 @@ export default function ProfileScreen() {
             onPress={parentPin ? handleRemovePin : () => { setShowPinSetup(true); setNewPin(''); setConfirmPin(''); }}
           >
             <View style={styles.modeCardLeft}>
-              <View style={[styles.modeIconWrap, { backgroundColor: parentPin ? '#E8F5E9' : '#FFF3E0' }]}>
-                {parentPin ? <Shield size={22} color={Colors.success} /> : <Lock size={22} color={Colors.warning} />}
+              <View style={[styles.modeIconWrap, { backgroundColor: parentPin ? Colors.primaryMuted : Colors.accentMuted }]}>
+                {parentPin ? <Shield size={22} color={Colors.primary} /> : <Lock size={22} color={Colors.accent} />}
               </View>
               <View>
                 <Text style={styles.modeCardTitle}>{parentPin ? 'Parent PIN Active' : 'Set Parent PIN'}</Text>
-                <Text style={styles.modeCardSub}>
-                  {parentPin ? 'Tap to remove PIN lock' : 'Require PIN to exit child mode'}
-                </Text>
+                <Text style={styles.modeCardSub}>{parentPin ? 'Tap to remove PIN lock' : 'Require PIN to exit child mode'}</Text>
               </View>
             </View>
             <ChevronRight size={20} color={Colors.textMuted} />
@@ -217,7 +293,7 @@ export default function ProfileScreen() {
 
         {recentLogs.length > 0 && (
           <View style={styles.logsSection}>
-            <Text style={styles.statsSectionTitle}>Recent Child Check-Ins</Text>
+            <Text style={styles.sectionTitle}>Recent Check-Ins</Text>
             {recentLogs.slice(0, 5).map(log => (
               <View key={log.id} style={styles.logCard}>
                 <Text style={styles.logEmoji}>{MOOD_EMOJIS[log.mood] || '😊'}</Text>
@@ -231,7 +307,7 @@ export default function ProfileScreen() {
                   {log.soreness.length > 0 && (
                     <Text style={styles.logSoreness}>Sore: {log.soreness.join(', ')}</Text>
                   )}
-                  {log.notes ? <Text style={styles.logNotes} numberOfLines={2}>"{log.notes}"</Text> : null}
+                  {log.notes ? <Text style={styles.logNotes} numberOfLines={2}>&ldquo;{log.notes}&rdquo;</Text> : null}
                 </View>
               </View>
             ))}
@@ -240,7 +316,7 @@ export default function ProfileScreen() {
 
         {hasProfile && (
           <View style={styles.statsSection}>
-            <Text style={styles.statsSectionTitle}>Stats</Text>
+            <Text style={styles.sectionTitle}>Stats</Text>
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
                 <Text style={styles.statValue}>{streak.current}</Text>
@@ -255,11 +331,10 @@ export default function ProfileScreen() {
         )}
 
         <Modal visible={showPinSetup} animationType="slide" transparent>
-          <View style={styles.pinOverlay}>
-            <View style={styles.pinContent}>
-              <Text style={styles.pinTitle}>Set Parent PIN</Text>
-              <Text style={styles.pinSubtitle}>Create a 4-digit PIN to lock child mode</Text>
-
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Set Parent PIN</Text>
+              <Text style={styles.modalSubtitle}>Create a 4-digit PIN to lock child mode</Text>
               <View style={styles.pinInputGroup}>
                 <Text style={styles.pinFieldLabel}>New PIN</Text>
                 <View style={styles.pinInputRow}>
@@ -270,7 +345,7 @@ export default function ProfileScreen() {
                     keyboardType="number-pad"
                     maxLength={4}
                     secureTextEntry={!showPin}
-                    placeholder="\u2022\u2022\u2022\u2022"
+                    placeholder="••••"
                     placeholderTextColor={Colors.textMuted}
                     autoFocus
                   />
@@ -279,7 +354,6 @@ export default function ProfileScreen() {
                   </Pressable>
                 </View>
               </View>
-
               <View style={styles.pinInputGroup}>
                 <Text style={styles.pinFieldLabel}>Confirm PIN</Text>
                 <TextInput
@@ -289,11 +363,10 @@ export default function ProfileScreen() {
                   keyboardType="number-pad"
                   maxLength={4}
                   secureTextEntry
-                  placeholder="\u2022\u2022\u2022\u2022"
+                  placeholder="••••"
                   placeholderTextColor={Colors.textMuted}
                 />
               </View>
-
               <Pressable style={styles.pinSaveBtn} onPress={handleSavePin}>
                 <Text style={styles.pinSaveBtnText}>Save PIN</Text>
               </Pressable>
@@ -304,10 +377,75 @@ export default function ProfileScreen() {
           </View>
         </Modal>
 
+        <Modal visible={showAddChild} animationType="slide" transparent>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Add Athlete</Text>
+              <Text style={styles.modalSubtitle}>Set up a new athlete profile</Text>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.newChildEmojiScroll}>
+                <View style={styles.emojiRow}>
+                  {emojiOptions.map(emoji => (
+                    <Pressable
+                      key={emoji}
+                      onPress={() => setNewChildEmoji(emoji)}
+                      style={[styles.emojiOption, newChildEmoji === emoji && styles.emojiOptionActive]}
+                    >
+                      <Text style={styles.emojiText}>{emoji}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
+
+              <Text style={styles.pinFieldLabel}>Name</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={newChildName}
+                onChangeText={setNewChildName}
+                placeholder="Athlete's name"
+                placeholderTextColor={Colors.textMuted}
+              />
+
+              <Text style={styles.pinFieldLabel}>Age</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={newChildAge}
+                onChangeText={setNewChildAge}
+                placeholder="10"
+                placeholderTextColor={Colors.textMuted}
+                keyboardType="number-pad"
+                maxLength={2}
+              />
+
+              <Text style={styles.pinFieldLabel}>Sport</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.newChildSportScroll}>
+                <View style={styles.sportRow}>
+                  {sportOptions.slice(0, 8).map(s => (
+                    <Pressable
+                      key={s}
+                      onPress={() => setNewChildSport(s)}
+                      style={[styles.sportChip, newChildSport === s && styles.sportChipActive]}
+                    >
+                      <Text style={[styles.sportLabel, newChildSport === s && styles.sportLabelActive]}>{s}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
+
+              <Pressable style={styles.pinSaveBtn} onPress={handleAddNewChild}>
+                <Text style={styles.pinSaveBtnText}>Add Athlete</Text>
+              </Pressable>
+              <Pressable style={styles.pinCancelBtn} onPress={() => setShowAddChild(false)}>
+                <Text style={styles.pinCancelText}>Cancel</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
         <View style={styles.aboutSection}>
           <Text style={styles.aboutTitle}>About Peak Jr.</Text>
           <Text style={styles.aboutText}>
-            Peak Jr. helps parents optimize their child's athletic development through science-backed daily habits. Every recommendation is grounded in peer-reviewed research from leading institutions.
+            Peak Jr. helps parents optimize their child&apos;s athletic development through science-backed daily habits.
           </Text>
           <Text style={styles.disclaimer}>
             This app provides general wellness information and is not a substitute for professional medical advice.
@@ -331,7 +469,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800' as const,
     color: Colors.text,
     letterSpacing: -0.5,
@@ -341,6 +479,102 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 4,
   },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    marginBottom: 12,
+  },
+  childrenSection: {
+    marginBottom: 28,
+  },
+  childrenHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  addChildBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primaryMuted,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  addChildText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: Colors.primary,
+  },
+  childCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    gap: 12,
+  },
+  childCardActive: {
+    borderColor: Colors.primary + '50',
+    backgroundColor: Colors.primaryGlow,
+  },
+  childEmoji: {
+    fontSize: 28,
+  },
+  childInfo: {
+    flex: 1,
+  },
+  childName: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: Colors.text,
+  },
+  childMeta: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  activeIndicator: {
+    backgroundColor: Colors.primaryMuted,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  activeText: {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    color: Colors.primary,
+  },
+  removeChildBtn: {
+    padding: 6,
+  },
+  firstChildCard: {
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: 32,
+    marginBottom: 28,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    borderStyle: 'dashed',
+    gap: 12,
+  },
+  firstChildTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: Colors.text,
+  },
+  firstChildSub: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 19,
+  },
   avatarSection: {
     alignItems: 'center',
     marginBottom: 28,
@@ -349,10 +583,12 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: Colors.accentMuted,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,
+    borderWidth: 2,
+    borderColor: Colors.primary + '30',
   },
   avatarEmoji: {
     fontSize: 36,
@@ -372,11 +608,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
   emojiOptionActive: {
     borderColor: Colors.primary,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: Colors.primaryMuted,
   },
   emojiText: {
     fontSize: 18,
@@ -388,7 +624,7 @@ const styles = StyleSheet.create({
   inputGroup: {
     gap: 8,
   },
-  inputLabel: {
+  inputLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -405,7 +641,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
   sportRow: {
     flexDirection: 'row',
@@ -417,7 +653,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
   sportChipActive: {
     backgroundColor: Colors.primary,
@@ -429,7 +665,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   sportLabelActive: {
-    color: '#fff',
+    color: Colors.background,
   },
   saveButton: {
     backgroundColor: Colors.primary,
@@ -447,61 +683,10 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: '700' as const,
-    color: '#fff',
-  },
-  statsSection: {
-    marginBottom: 32,
-  },
-  statsSectionTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: Colors.text,
-    marginBottom: 12,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    padding: 18,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-  },
-  statValue: {
-    fontSize: 28,
-    fontWeight: '800' as const,
-    color: Colors.primary,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 4,
-  },
-  aboutSection: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-  },
-  aboutTitle: {
-    fontSize: 16,
-    fontWeight: '700' as const,
-    color: Colors.text,
-    marginBottom: 10,
+    color: Colors.background,
   },
   modeSection: {
     marginBottom: 28,
-  },
-  modeSectionTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: Colors.text,
-    marginBottom: 6,
   },
   modeSectionSubtitle: {
     fontSize: 13,
@@ -517,7 +702,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E8E4FF',
+    borderColor: Colors.surfaceBorder,
     marginBottom: 10,
   },
   modeCardLeft: {
@@ -530,7 +715,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#F0EDFF',
+    backgroundColor: Colors.childPrimary + '20',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -552,7 +737,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
   logsSection: {
     marginBottom: 28,
@@ -565,7 +750,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
     gap: 12,
   },
   logEmoji: {
@@ -597,32 +782,78 @@ const styles = StyleSheet.create({
     fontStyle: 'italic' as const,
     marginTop: 2,
   },
-  pinOverlay: {
+  statsSection: {
+    marginBottom: 32,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statCard: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    padding: 18,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: '800' as const,
+    color: Colors.primary,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 30,
   },
-  pinContent: {
-    backgroundColor: Colors.background,
+  modalContent: {
+    backgroundColor: Colors.surface,
     borderRadius: 24,
     padding: 28,
     width: '100%',
     maxWidth: 340,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
   },
-  pinTitle: {
+  modalTitle: {
     fontSize: 22,
     fontWeight: '800' as const,
     color: Colors.text,
     textAlign: 'center',
     marginBottom: 6,
   },
-  pinSubtitle: {
+  modalSubtitle: {
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
+  },
+  modalInput: {
+    backgroundColor: Colors.surfaceLight,
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    color: Colors.text,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    marginBottom: 14,
+  },
+  newChildEmojiScroll: {
+    maxHeight: 44,
+    marginBottom: 16,
+  },
+  newChildSportScroll: {
+    maxHeight: 44,
+    marginBottom: 16,
   },
   pinInputGroup: {
     marginBottom: 16,
@@ -636,10 +867,10 @@ const styles = StyleSheet.create({
   pinInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.surfaceLight,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
     paddingRight: 14,
   },
   pinInput: {
@@ -662,7 +893,7 @@ const styles = StyleSheet.create({
   pinSaveBtnText: {
     fontSize: 16,
     fontWeight: '700' as const,
-    color: '#fff',
+    color: Colors.background,
   },
   pinCancelBtn: {
     alignItems: 'center',
@@ -671,6 +902,19 @@ const styles = StyleSheet.create({
   pinCancelText: {
     fontSize: 14,
     color: Colors.textMuted,
+  },
+  aboutSection: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+  },
+  aboutTitle: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    marginBottom: 10,
   },
   aboutText: {
     fontSize: 14,

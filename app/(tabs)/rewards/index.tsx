@@ -9,7 +9,6 @@ import {
   Modal,
   Animated,
   Alert,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gift, Plus, Trophy, Star, Trash2, Check, X, ChevronRight } from 'lucide-react-native';
@@ -29,7 +28,6 @@ export default function RewardsScreen() {
     redeemReward,
     removeReward,
     weeklyCompletedCount,
-    weeklyPercentage,
   } = useApp();
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -108,7 +106,7 @@ export default function RewardsScreen() {
             onPress={() => setShowAddModal(true)}
             testID="add-reward-btn"
           >
-            <Plus size={20} color="#fff" />
+            <Plus size={20} color={Colors.background} />
           </Pressable>
         </View>
 
@@ -124,8 +122,8 @@ export default function RewardsScreen() {
           </View>
           <View style={styles.pointsDivider} />
           <View style={styles.pointsCard}>
-            <View style={[styles.pointsIconWrap, { backgroundColor: '#E8F5E9' }]}>
-              <Trophy size={22} color={Colors.success} />
+            <View style={[styles.pointsIconWrap, { backgroundColor: Colors.primaryMuted }]}>
+              <Trophy size={22} color={Colors.primary} />
             </View>
             <View>
               <Text style={styles.pointsValue}>{redeemedRewards.length}</Text>
@@ -151,7 +149,7 @@ export default function RewardsScreen() {
               Tap the + button to create a reward your child can work toward
             </Text>
             <Pressable style={styles.emptyAddBtn} onPress={() => setShowAddModal(true)}>
-              <Plus size={18} color="#fff" />
+              <Plus size={18} color={Colors.background} />
               <Text style={styles.emptyAddText}>Add First Reward</Text>
             </Pressable>
           </View>
@@ -209,31 +207,19 @@ export default function RewardsScreen() {
 
                   <View style={styles.rewardActions}>
                     <View style={styles.pointButtons}>
-                      <Pressable
-                        style={styles.pointBtn}
-                        onPress={() => handleAddPoints(reward.id, 1)}
-                      >
+                      <Pressable style={styles.pointBtn} onPress={() => handleAddPoints(reward.id, 1)}>
                         <Text style={styles.pointBtnText}>+1</Text>
                       </Pressable>
-                      <Pressable
-                        style={styles.pointBtn}
-                        onPress={() => handleAddPoints(reward.id, 5)}
-                      >
+                      <Pressable style={styles.pointBtn} onPress={() => handleAddPoints(reward.id, 5)}>
                         <Text style={styles.pointBtnText}>+5</Text>
                       </Pressable>
-                      <Pressable
-                        style={styles.pointBtn}
-                        onPress={() => handleAddPoints(reward.id, 10)}
-                      >
+                      <Pressable style={styles.pointBtn} onPress={() => handleAddPoints(reward.id, 10)}>
                         <Text style={styles.pointBtnText}>+10</Text>
                       </Pressable>
                     </View>
                     {isReady && (
-                      <Pressable
-                        style={styles.redeemBtn}
-                        onPress={() => setShowRedeemModal(reward.id)}
-                      >
-                        <Trophy size={16} color="#fff" />
+                      <Pressable style={styles.redeemBtn} onPress={() => setShowRedeemModal(reward.id)}>
+                        <Trophy size={16} color={Colors.background} />
                         <Text style={styles.redeemBtnText}>Redeem!</Text>
                       </Pressable>
                     )}
@@ -246,10 +232,7 @@ export default function RewardsScreen() {
 
         {redeemedRewards.length > 0 && (
           <View style={styles.section}>
-            <Pressable
-              style={styles.historySectionHeader}
-              onPress={() => setShowHistory(!showHistory)}
-            >
+            <Pressable style={styles.historySectionHeader} onPress={() => setShowHistory(!showHistory)}>
               <Text style={styles.sectionTitle}>Earned Rewards</Text>
               <View style={styles.historyToggle}>
                 <Text style={styles.historyCount}>{redeemedRewards.length}</Text>
@@ -266,13 +249,11 @@ export default function RewardsScreen() {
                 <View style={styles.historyInfo}>
                   <Text style={styles.historyTitle}>{reward.title}</Text>
                   <Text style={styles.historyDate}>
-                    {reward.redeemedAt
-                      ? new Date(reward.redeemedAt).toLocaleDateString()
-                      : 'Completed'}
+                    {reward.redeemedAt ? new Date(reward.redeemedAt).toLocaleDateString() : 'Completed'}
                   </Text>
                 </View>
                 <View style={styles.historyBadge}>
-                  <Check size={14} color={Colors.success} />
+                  <Check size={14} color={Colors.primary} />
                 </View>
               </View>
             ))}
@@ -282,7 +263,7 @@ export default function RewardsScreen() {
         <View style={styles.tipCard}>
           <Text style={styles.tipLabel}>💡 Parent Tip</Text>
           <Text style={styles.tipText}>
-            Research shows that intrinsic motivation grows when rewards are experience-based (trips, activities, quality time) rather than purely material. Consider mixing in experiences!
+            Research shows that intrinsic motivation grows when rewards are experience-based (trips, activities, quality time) rather than purely material.
           </Text>
           <Text style={styles.tipSource}>— Self-Determination Theory, Deci & Ryan</Text>
         </View>
@@ -299,19 +280,11 @@ export default function RewardsScreen() {
             </View>
 
             <Text style={styles.fieldLabel}>Choose an emoji</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.emojiScroll}
-              contentContainerStyle={styles.emojiRow}
-            >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.emojiScroll} contentContainerStyle={styles.emojiRow}>
               {REWARD_EMOJIS.map(emoji => (
                 <Pressable
                   key={emoji}
-                  style={[
-                    styles.emojiOption,
-                    selectedEmoji === emoji && styles.emojiOptionSelected,
-                  ]}
+                  style={[styles.emojiOption, selectedEmoji === emoji && styles.emojiOptionSelected]}
                   onPress={() => setSelectedEmoji(emoji)}
                 >
                   <Text style={styles.emojiOptionText}>{emoji}</Text>
@@ -359,14 +332,11 @@ export default function RewardsScreen() {
             </View>
 
             <Pressable
-              style={[
-                styles.createBtn,
-                (!newTitle.trim() || !newPoints.trim()) && styles.createBtnDisabled,
-              ]}
+              style={[styles.createBtn, (!newTitle.trim() || !newPoints.trim()) && styles.createBtnDisabled]}
               onPress={handleAddReward}
               testID="create-reward-btn"
             >
-              <Gift size={18} color="#fff" />
+              <Gift size={18} color={Colors.background} />
               <Text style={styles.createBtnText}>Create Reward</Text>
             </Pressable>
           </View>
@@ -382,16 +352,13 @@ export default function RewardsScreen() {
                 <Text style={styles.redeemTitle}>Reward Unlocked!</Text>
                 <Text style={styles.redeemName}>{redeemTarget.title}</Text>
                 <Text style={styles.redeemDesc}>
-                  Amazing work! All {redeemTarget.pointsRequired} points earned through consistent effort and dedication.
+                  Amazing work! All {redeemTarget.pointsRequired} points earned through consistent effort.
                 </Text>
                 <Pressable style={styles.redeemConfirmBtn} onPress={() => handleRedeem(redeemTarget.id)}>
-                  <Trophy size={18} color="#fff" />
+                  <Trophy size={18} color={Colors.background} />
                   <Text style={styles.redeemConfirmText}>Claim Reward</Text>
                 </Pressable>
-                <Pressable
-                  style={styles.redeemCancelBtn}
-                  onPress={() => setShowRedeemModal(null)}
-                >
+                <Pressable style={styles.redeemCancelBtn} onPress={() => setShowRedeemModal(null)}>
                   <Text style={styles.redeemCancelText}>Not yet</Text>
                 </Pressable>
               </>
@@ -419,7 +386,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800' as const,
     color: Colors.text,
     letterSpacing: -0.5,
@@ -444,7 +411,7 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
     alignItems: 'center',
   },
   pointsCard: {
@@ -457,7 +424,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: Colors.rewardMuted,
+    backgroundColor: Colors.rewardLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -479,12 +446,14 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     flexDirection: 'row',
-    backgroundColor: Colors.overlay,
+    backgroundColor: Colors.primaryGlow,
     borderRadius: 14,
     padding: 14,
     gap: 10,
     marginBottom: 20,
     alignItems: 'flex-start',
+    borderWidth: 1,
+    borderColor: Colors.primary + '20',
   },
   infoText: {
     flex: 1,
@@ -500,7 +469,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -531,7 +500,7 @@ const styles = StyleSheet.create({
   emptyAddText: {
     fontSize: 15,
     fontWeight: '700' as const,
-    color: '#fff',
+    color: Colors.background,
   },
   section: {
     marginBottom: 24,
@@ -548,7 +517,7 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
   rewardCardReady: {
     borderColor: Colors.reward,
@@ -564,7 +533,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 14,
-    backgroundColor: Colors.rewardMuted,
+    backgroundColor: Colors.rewardLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -593,7 +562,7 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 10,
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.surfaceLight,
     borderRadius: 5,
     overflow: 'hidden',
     marginBottom: 6,
@@ -604,7 +573,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   progressBarReady: {
-    backgroundColor: Colors.success,
+    backgroundColor: Colors.primary,
   },
   progressText: {
     fontSize: 12,
@@ -621,12 +590,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   pointBtn: {
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.surfaceLight,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
   pointBtnText: {
     fontSize: 14,
@@ -635,7 +604,7 @@ const styles = StyleSheet.create({
   },
   redeemBtn: {
     flexDirection: 'row',
-    backgroundColor: Colors.success,
+    backgroundColor: Colors.primary,
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 12,
@@ -645,7 +614,7 @@ const styles = StyleSheet.create({
   redeemBtnText: {
     fontSize: 14,
     fontWeight: '700' as const,
-    color: '#fff',
+    color: Colors.background,
   },
   historySectionHeader: {
     flexDirection: 'row',
@@ -661,7 +630,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700' as const,
     color: Colors.textMuted,
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.surfaceLight,
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 10,
@@ -675,7 +644,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
     gap: 12,
   },
   historyEmoji: {
@@ -698,40 +667,44 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: Colors.primaryMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tipCard: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.surface,
     borderRadius: 18,
     padding: 20,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.info,
   },
   tipLabel: {
     fontSize: 13,
     fontWeight: '700' as const,
-    color: Colors.accentLight,
+    color: Colors.info,
     marginBottom: 10,
   },
   tipText: {
     fontSize: 14,
-    color: '#E0E0E0',
+    color: Colors.textSecondary,
     lineHeight: 22,
     marginBottom: 10,
   },
   tipSource: {
     fontSize: 11,
-    color: '#8FAF9E',
+    color: Colors.textMuted,
     fontStyle: 'italic' as const,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.backgroundElevated,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -765,7 +738,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.surfaceLight,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -773,7 +746,7 @@ const styles = StyleSheet.create({
   },
   emojiOptionSelected: {
     borderColor: Colors.reward,
-    backgroundColor: Colors.rewardMuted,
+    backgroundColor: Colors.rewardLight,
   },
   emojiOptionText: {
     fontSize: 22,
@@ -781,7 +754,7 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
     borderRadius: 14,
     padding: 14,
     fontSize: 15,
@@ -819,11 +792,11 @@ const styles = StyleSheet.create({
   createBtnText: {
     fontSize: 16,
     fontWeight: '700' as const,
-    color: '#fff',
+    color: Colors.background,
   },
   redeemOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 30,
@@ -835,6 +808,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     maxWidth: 340,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
   },
   redeemEmoji: {
     fontSize: 56,
@@ -861,7 +836,7 @@ const styles = StyleSheet.create({
   },
   redeemConfirmBtn: {
     flexDirection: 'row',
-    backgroundColor: Colors.success,
+    backgroundColor: Colors.primary,
     paddingHorizontal: 28,
     paddingVertical: 14,
     borderRadius: 16,
@@ -874,7 +849,7 @@ const styles = StyleSheet.create({
   redeemConfirmText: {
     fontSize: 16,
     fontWeight: '700' as const,
-    color: '#fff',
+    color: Colors.background,
   },
   redeemCancelBtn: {
     paddingVertical: 10,

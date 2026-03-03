@@ -42,7 +42,7 @@ export default React.memo(function HabitCard({ habit, onToggle, showCategory = f
       <Pressable onPress={handleTodayToggle} style={[styles.card, isTodayDone && styles.cardCompleted]}>
         <View style={styles.row}>
           <View style={[styles.checkbox, isTodayDone && styles.checkboxCompleted]}>
-            {isTodayDone && <Check size={14} color="#fff" strokeWidth={3} />}
+            {isTodayDone && <Check size={14} color={Colors.background} strokeWidth={3} />}
           </View>
           <View style={styles.content}>
             <View style={styles.titleRow}>
@@ -64,7 +64,7 @@ export default React.memo(function HabitCard({ habit, onToggle, showCategory = f
                   style={[
                     styles.dayDot,
                     habit.completedDays[i] && styles.dayDotCompleted,
-                    i === todayIndex && styles.dayDotToday,
+                    i === todayIndex && !habit.completedDays[i] && styles.dayDotToday,
                   ]}
                 >
                   <Text style={[
@@ -94,11 +94,11 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
   cardCompleted: {
-    backgroundColor: '#F0F7F3',
-    borderColor: '#C8E6D0',
+    backgroundColor: Colors.primaryMuted,
+    borderColor: Colors.primaryDim + '40',
   },
   row: {
     flexDirection: 'row',
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     borderWidth: 2,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   titleCompleted: {
-    color: Colors.primaryMuted,
+    color: Colors.primary,
     textDecorationLine: 'line-through',
   },
   description: {
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.surfaceLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -173,14 +173,14 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   dayLabelCompleted: {
-    color: '#fff',
+    color: Colors.background,
   },
   dayLabelToday: {
     color: Colors.accent,
   },
   weekCount: {
     marginLeft: 'auto',
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.surfaceLight,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,

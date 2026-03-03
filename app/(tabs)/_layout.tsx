@@ -12,11 +12,11 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: isChild ? '#6C5CE7' : Colors.primary,
+        tabBarActiveTintColor: isChild ? Colors.childPrimary : Colors.primary,
         tabBarInactiveTintColor: Colors.textMuted,
         tabBarStyle: {
-          backgroundColor: isChild ? '#F7F5FF' : Colors.surface,
-          borderTopColor: isChild ? '#E8E4FF' : Colors.divider,
+          backgroundColor: isChild ? Colors.childBackground : Colors.background,
+          borderTopColor: Colors.divider,
           borderTopWidth: 1,
         },
         tabBarLabelStyle: {

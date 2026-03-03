@@ -51,7 +51,7 @@ export default function ArticleDetailScreen() {
         ))}
 
         <View style={styles.sourceCard}>
-          <FlaskConical size={16} color={Colors.primaryMuted} />
+          <FlaskConical size={16} color={Colors.primary} />
           <View style={styles.sourceContent}>
             <Text style={styles.sourceLabel}>Research Source</Text>
             <Text style={styles.sourceText}>{article.source}</Text>
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   categoryBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.surfaceLight,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
@@ -119,21 +119,25 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   summaryCard: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.surface,
     borderRadius: 14,
     padding: 18,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary,
   },
   summaryLabel: {
     fontSize: 10,
     fontWeight: '800' as const,
-    color: Colors.accentLight,
+    color: Colors.primary,
     letterSpacing: 2,
     marginBottom: 8,
   },
   summaryText: {
     fontSize: 15,
-    color: '#D4E8DB',
+    color: Colors.textSecondary,
     lineHeight: 23,
   },
   paragraph: {
@@ -144,7 +148,7 @@ const styles = StyleSheet.create({
   },
   sourceCard: {
     flexDirection: 'row',
-    backgroundColor: '#F0F7F3',
+    backgroundColor: Colors.primaryMuted,
     borderRadius: 12,
     padding: 16,
     marginTop: 8,
@@ -157,7 +161,7 @@ const styles = StyleSheet.create({
   sourceLabel: {
     fontSize: 11,
     fontWeight: '700' as const,
-    color: Colors.primaryMuted,
+    color: Colors.primary,
     marginBottom: 2,
   },
   sourceText: {

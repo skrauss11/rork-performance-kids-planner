@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800' as const,
     color: Colors.text,
     letterSpacing: -0.5,
@@ -133,12 +133,12 @@ const styles = StyleSheet.create({
   weekBadgeText: {
     fontSize: 18,
     fontWeight: '800' as const,
-    color: '#fff',
+    color: Colors.background,
   },
   weekBadgeLabel: {
     fontSize: 10,
     fontWeight: '600' as const,
-    color: 'rgba(255,255,255,0.7)',
+    color: Colors.background + 'AA',
     marginTop: 1,
   },
   weekProgress: {
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   },
   weekProgressTrack: {
     height: 6,
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.surfaceLight,
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: 6,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     gap: 6,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.surfaceBorder,
   },
   filterChipActive: {
     backgroundColor: Colors.primary,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   filterLabelActive: {
-    color: '#fff',
+    color: Colors.background,
   },
   listContent: {
     padding: 20,
