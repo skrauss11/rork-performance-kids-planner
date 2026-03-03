@@ -8,10 +8,11 @@ import { useApp } from '@/providers/AppProvider';
 import { GameEvent } from '@/types';
 import { formatEventDate, getDaysUntil, isToday, isTomorrow } from '@/utils/date';
 import { gameDayTips, timingLabels, timingOrder } from '@/mocks/gameday';
+import ReadinessScore from '@/components/ReadinessScore';
 
 export default function GameDayScreen() {
   const insets = useSafeAreaInsets();
-  const { upcomingEvents, addEvent, removeEvent, profile } = useApp();
+  const { upcomingEvents, addEvent, removeEvent, profile, getReadinessScore } = useApp();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<GameEvent | null>(null);
   const [showTips, setShowTips] = useState(false);
@@ -157,6 +158,14 @@ export default function GameDayScreen() {
               {selectedEvent.notes ? (
                 <Text style={styles.eventNotes}>{selectedEvent.notes}</Text>
               ) : null}
+            </View>
+
+            <View style={styles.readinessWrap}>
+              <ReadinessScore
+                data={getReadinessScore(selectedEvent.date)}
+                eventTitle={selectedEvent.title}
+                daysUntil={getDaysUntil(selectedEvent.date)}
+              />
             </View>
 
             <View style={styles.tipsSection}>
@@ -591,6 +600,9 @@ const styles = StyleSheet.create({
     marginTop: 14,
     lineHeight: 20,
     fontStyle: 'italic' as const,
+  },
+  readinessWrap: {
+    marginBottom: 20,
   },
   tipsSection: {
     marginBottom: 20,

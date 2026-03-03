@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
 import { Habit, ChildProfile, HabitCategory, GameEvent, Reward, AppMode, ChildLog, TrendDataPoint } from '@/types';
 import { defaultHabits } from '@/mocks/habits';
-import { getWeekKey, getDayOfWeekIndex } from '@/utils/date';
+import { getWeekKey, getDayOfWeekIndex, getDaysUntil } from '@/utils/date';
 
 const HABITS_KEY = 'peakjr_habits_weekly';
 const CHILDREN_KEY = 'peakjr_children';
@@ -505,6 +505,38 @@ export const [AppProvider, useApp] = createContextHook(() => {
     }).slice(0, 10);
   }, [events]);
 
+  const getReadinessScore = useCallback((eventDate: string): { score: number; completed: number; total: number; daysTracked: number; categoryScores: Record<HabitCategory, { completed: number; total: number }> } => {
+    const daysUntil = getDaysUntil(eventDate);
+    const daysToCount = Math.min(todayIndex + 1, 7);
+    const lookbackDays = daysUntil <= 0 ? daysToCount : Math.min(daysToCount, daysToCount);
+
+    let totalChecks = 0;
+    let completedChecks = 0;
+    const catScores: Record<HabitCategory, { completed: number; total: number }> = {
+      sleep: { completed: 0, total: 0 },
+      nutrition: { completed: 0, total: 0 },
+      sunlight: { completed: 0, total: 0 },
+      hydration: { completed: 0, total: 0 },
+      movement: { completed: 0, total: 0 },
+      recovery: { completed: 0, total: 0 },
+      environmental: { completed: 0, total: 0 },
+    };
+
+    habits.forEach(h => {
+      for (let d = 0; d < lookbackDays; d++) {
+        totalChecks++;
+        catScores[h.category].total++;
+        if (h.completedDays[d]) {
+          completedChecks++;
+          catScores[h.category].completed++;
+        }
+      }
+    });
+
+    const score = totalChecks > 0 ? Math.round((completedChecks / totalChecks) * 100) : 0;
+    return { score, completed: completedChecks, total: totalChecks, daysTracked: lookbackDays, categoryScores: catScores };
+  }, [habits, todayIndex]);
+
   const totalLifetimePoints = useMemo(() => {
     return weeklyCompletedCount;
   }, [weeklyCompletedCount]);
@@ -588,6 +620,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
     todayCompletedCount,
     totalCount,
     todayPercentage,
+    getReadinessScore,
     weeklyCompletedCount,
     weeklyTotalPossible,
     weeklyPercentage,

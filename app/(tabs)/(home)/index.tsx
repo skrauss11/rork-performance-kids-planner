@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Animated, Pressable, Modal, TextInput, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -11,6 +11,7 @@ import ChildDashboard from '@/components/ChildDashboard';
 import ChildCheckIn from '@/components/ChildCheckIn';
 import TrendGraph from '@/components/TrendGraph';
 import ProgressRing from '@/components/ProgressRing';
+import ReadinessScore from '@/components/ReadinessScore';
 import { HabitCategory } from '@/types';
 import { dayLabels } from '@/mocks/habits';
 
@@ -24,7 +25,7 @@ export default function HomeScreen() {
     weeklyPercentage, categoryProgress, streak, hasProfile,
     upcomingEvents, todayIndex, habits, children, activeChild,
     switchActiveChild, dailyCompletionData, moodTrendData, energyTrendData,
-    appMode, switchMode, parentPin, verifyPin,
+    appMode, switchMode, parentPin, verifyPin, getReadinessScore,
   } = useApp();
   const progressAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -70,6 +71,10 @@ export default function HomeScreen() {
 
   const displayName = hasProfile ? profile.name.split(' ')[0] : 'Champion';
   const nextEvent = upcomingEvents.length > 0 ? upcomingEvents[0] : null;
+  const nextEventReadiness = useMemo(() => {
+    if (!nextEvent) return null;
+    return getReadinessScore(nextEvent.date);
+  }, [nextEvent, getReadinessScore]);
 
   if (appMode === 'child' && showCheckIn) {
     return (
@@ -167,6 +172,14 @@ export default function HomeScreen() {
                   {nextEvent.time ? ` at ${nextEvent.time}` : ''}
                 </Text>
               </View>
+              {nextEventReadiness && (
+                <ReadinessScore
+                  data={nextEventReadiness}
+                  eventTitle={nextEvent.title}
+                  daysUntil={getDaysUntil(nextEvent.date)}
+                  compact
+                />
+              )}
             </Pressable>
           )}
 
